@@ -167,9 +167,9 @@ resource "aws_eks_addon" "ebs_csi" {
   addon_version = var.ebs_csi_addon_version
 
   service_account_role_arn = var.ebs_csi_role.arn
-  # timeouts {
-  #   create = "13m"
-  # }
+  timeouts {
+    create = "3m"
+  }
   preserve                    = false
   resolve_conflicts_on_update = var.resolve_conflicts_on_update
   configuration_values        = null
@@ -184,4 +184,25 @@ data "tls_certificate" "oidc_cert" {
   depends_on = [
     aws_eks_cluster.eks,
   ]
+}
+
+
+
+resource "null_resource" "ebs_csi_recreate" {
+  provisioner "local-exec" {
+    command = <<EOT
+      echo "Deleting EBS CSI add-on..."
+      aws eks delete-addon --cluster-name ${var.eks_name} --addon-name aws-ebs-csi-driver
+      sleep 30
+      echo "Adding EBS CSI add-on..."
+      aws eks create-addon --cluster-name ${var.eks_name} --addon-name aws-ebs-csi-driver --service-account-role-arn ${var.ebs_csi_role.arn}
+    EOT
+  }
+
+  # Use triggers to ensure this runs after the initial deployment
+  triggers = {
+    always_run = "${timestamp()}"
+  }
+
+  depends_on = [ aws_eks_cluster.eks, aws_eks_addon.core_dns, aws_eks_addon.ebs_csi, aws_eks_addon.kube-proxy, aws_eks_addon.pod_identity, aws_eks_addon.vpc-cni, aws_cloudwatch_log_group.cluster_logging ]
 }
