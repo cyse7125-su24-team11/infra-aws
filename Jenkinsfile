@@ -1,14 +1,10 @@
-pipeline {
+pipeline{
     agent any
-    environment {
+        environment {
         GITHUB_CREDENTIALS_ID = 'GH_CRED'
         GITHUB_REPO_OWNER = 'cyse7125-su24-team11'
         GITHUB_REPO_NAME = 'infra-aws'
-        HELM_INSTALL_DIR = "${env.HOME}/.local/bin"  // Directory to install Helm
-        PATH = "${env.HELM_INSTALL_DIR}:${env.PATH}"  // Add the install directory to PATH
-        HELM_VERSION = 'v3.15.1'  // Specify the desired Helm version here
-    }
-        
+            }
     stages {
         stage('Checkout') {
             steps {
@@ -30,18 +26,28 @@ pipeline {
                 }
             }
         }
-        
-        stage('Install Helm') {
-            steps {
-                script {
-                    sh '''
-                    # Create the install directory if it doesn't exist
-                    terraform init
-                    terraform validate
-                    '''
+        stage('Terraform Validate')
+        {
+        steps{
+
+            sh '''
+            terraform fmt -check -recursive .
+            if [ $? == 0 ]; then
+              echo "Terraform script formatted correctly";
+            else 
+              echo "Terraform script is incorrectly formatted. Please fix it";
+              exit 1
+            fi
+            '''
+        }
+        post{
+            failure{
+                script{
+                    currentBuild.result = 'FAILURE'
                 }
             }
         }
+    }
     }
     post {
         success {
@@ -64,3 +70,4 @@ pipeline {
         }
     }
 }
+

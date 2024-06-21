@@ -131,7 +131,7 @@ resource "aws_eks_addon" "core_dns" {
   resolve_conflicts_on_update = var.resolve_conflicts_on_update
 
   configuration_values = jsonencode({
-    replicaCount = 0
+    replicaCount = 2
   })
   depends_on = [
     aws_eks_cluster.eks,
