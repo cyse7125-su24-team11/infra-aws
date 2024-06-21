@@ -173,7 +173,7 @@ data "aws_iam_policy_document" "ebs_csi_assume_role_policy" {
     condition {
       test     = "StringEquals"
       variable = "${replace(aws_iam_openid_connect_provider.oidc_provider.url, "https://", "")}:sub"
-      values   = ["system:serviceaccount:kube-system:aws-node"]
+      values   = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
     }
     condition {
       test     = "StringEquals"
@@ -379,6 +379,11 @@ resource "aws_iam_role_policy_attachment" "ebs_csi_custom_policy" {
   depends_on = [aws_iam_role.ebs_csi_role]
 }
 
+resource "aws_iam_role_policy_attachment" "node_group_AmazonEBSCSIDriverPolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+  role       = aws_iam_role.node_group_role.name
+  depends_on = [aws_iam_role.node_group_role]
+}
 
 
 ## IAM role and policy for  ---- OIDC Identity Provider ---- ##
@@ -481,4 +486,35 @@ resource "aws_iam_role_policy_attachment" "node_group_kms_policy" {
   policy_arn = aws_iam_policy.ebs_csi_kms_policy.arn
   role       = aws_iam_role.node_group_role.name
   depends_on = [aws_iam_role.node_group_role]
+}
+
+
+resource "aws_iam_role_policy_attachment" "node_group_kms_policy" {
+  policy_arn = aws_iam_policy.ebs_csi_kms_policy.arn
+  role       = aws_iam_role.node_group_role.name
+  depends_on = [aws_iam_role.node_group_role]
+}
+
+resource "aws_iam_policy" "pass_role_policy" {
+  name = "pass_role_policy"
+ 
+  policy = jsonencode({
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Statement1",
+            "Effect": "Allow",
+            "Action": [
+                "iam:PassRole"
+            ],
+            "Resource": "*"
+        }
+    ]
+})
+}
+
+resource "aws_iam_role_policy_attachment" "pass_role_policy" {
+  policy_arn = aws_iam_policy.pass_role_policy.arn
+  role       = aws_iam_role.eks_pod_identity_role.name
+  depends_on = [aws_iam_role.eks_pod_identity_role]
 }
