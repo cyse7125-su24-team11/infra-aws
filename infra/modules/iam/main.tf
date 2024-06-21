@@ -518,3 +518,38 @@ resource "aws_iam_role_policy_attachment" "pass_role_policy" {
   role       = aws_iam_role.eks_pod_identity_role.name
   depends_on = [aws_iam_role.eks_pod_identity_role]
 }
+
+
+
+data "aws_iam_policy_document" "assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["pods.eks.amazonaws.com"]
+    }
+
+    actions = [
+      "sts:AssumeRole",
+      "sts:TagSession"
+    ]
+  }
+}
+
+resource "aws_iam_role" "ebs-pod-identity-role" {
+  name               = "eks-pod-identity"
+  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "ebs-pod-identity-policy" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+  role       = aws_iam_role.ebs-pod-identity-role.name
+}
+
+resource "aws_eks_pod_identity_association" "pod-identity-association" {
+  cluster_name    = var.eks_name
+  namespace       = "kube-system"
+  service_account = "ebs-csi-controller-sa"
+  role_arn        = aws_iam_role.ebs-pod-identity-role.arn
+}
