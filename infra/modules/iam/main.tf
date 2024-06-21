@@ -488,13 +488,6 @@ resource "aws_iam_role_policy_attachment" "node_group_kms_policy" {
   depends_on = [aws_iam_role.node_group_role]
 }
 
-
-resource "aws_iam_role_policy_attachment" "node_group_kms_policy" {
-  policy_arn = aws_iam_policy.ebs_csi_kms_policy.arn
-  role       = aws_iam_role.node_group_role.name
-  depends_on = [aws_iam_role.node_group_role]
-}
-
 resource "aws_iam_policy" "pass_role_policy" {
   name = "pass_role_policy"
  
@@ -547,9 +540,10 @@ resource "aws_iam_role_policy_attachment" "ebs-pod-identity-policy" {
   role       = aws_iam_role.ebs-pod-identity-role.name
 }
 
-resource "aws_eks_pod_identity_association" "pod-identity-association" {
-  cluster_name    = var.eks_name
-  namespace       = "kube-system"
-  service_account = "ebs-csi-controller-sa"
-  role_arn        = aws_iam_role.ebs-pod-identity-role.arn
+resource "aws_iam_role_policy_attachment" "ebs-pod-identity-custom-policy" {
+  policy_arn = aws_iam_policy.ebs_csi_custom_policy.arn
+  role       = aws_iam_role.ebs-pod-identity-role.name
+  depends_on = [ aws_iam_role.ebs-pod-identity-role, aws_iam_policy.ebs_csi_custom_policy ]
 }
+
+
