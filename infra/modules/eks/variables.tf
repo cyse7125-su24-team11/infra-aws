@@ -1,3 +1,7 @@
+variable "region" {
+  type    = string
+  default = "us-east-1"
+}
 
 variable "k8s_version" {
   type    = string
@@ -95,12 +99,13 @@ variable "retention_in_days" {
 }
 
 variable "eks_cluster_role" {}
+variable "ebs_csi_role" {}
+variable "vpc_cni_role" {}
+variable "eks_pod_identity_role" {}
 variable "eks_vpc" {}
 variable "public_subnets" {}
 variable "private_subnets" {}
 variable "eks_sg" {}
 variable "eks_secrets_arn" {}
 variable "node_group_role" {}
-variable "ebs_csi_role" {}
-variable "vpc_cni_role" {}
-variable "eks_pod_identity_role" {}
+variable "node_group" {}

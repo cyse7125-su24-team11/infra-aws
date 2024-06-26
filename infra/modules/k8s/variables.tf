@@ -1,0 +1,9 @@
+variable "eks_cluster_role" {}
+variable "node_group" {}
+variable "node_group_iam_role" {}
+variable "ebs_csi_role" {}
+variable "vpc_cni_role" {}
+variable "kubeconfig" {}
+variable "eks_endpoint" {}
+variable "eks_name" {}
+variable "certificate_authority_data" {}

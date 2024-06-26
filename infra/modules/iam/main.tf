@@ -116,7 +116,7 @@ resource "aws_iam_role" "vpc_cni_role" {
 resource "aws_iam_role_policy_attachment" "vpc_cni_AmazonEKS_CNI_Policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   role       = aws_iam_role.vpc_cni_role.name
-  depends_on = [ aws_iam_role.vpc_cni_role  ]
+  depends_on = [aws_iam_role.vpc_cni_role]
 }
 
 
@@ -186,6 +186,19 @@ data "aws_iam_policy_document" "ebs_csi_assume_role_policy" {
       type        = "Federated"
     }
   }
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["pods.eks.amazonaws.com"]
+    }
+
+    actions = [
+      "sts:AssumeRole",
+      "sts:TagSession"
+    ]
+  }
 }
 
 resource "aws_iam_policy" "ebs_csi_kms_policy" {
@@ -227,126 +240,126 @@ resource "aws_iam_policy" "ebs_csi_custom_policy" {
   name = var.ebs_csi_custom_policy
 
   policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ec2:CreateSnapshot",
-                "ec2:AttachVolume",
-                "ec2:DetachVolume",
-                "ec2:ModifyVolume",
-                "ec2:DescribeAvailabilityZones",
-                "ec2:DescribeInstances",
-                "ec2:DescribeSnapshots",
-                "ec2:DescribeTags",
-                "ec2:DescribeVolumes",
-                "ec2:DescribeVolumesModifications"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ec2:CreateTags"
-            ],
-            "Resource": [
-                "arn:aws:ec2:*:*:volume/*",
-                "arn:aws:ec2:*:*:snapshot/*"
-            ],
-            "Condition": {
-                "StringEquals": {
-                    "ec2:CreateAction": [
-                        "CreateVolume",
-                        "CreateSnapshot"
-                    ]
-                }
-            }
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ec2:DeleteTags"
-            ],
-            "Resource": [
-                "arn:aws:ec2:*:*:volume/*",
-                "arn:aws:ec2:*:*:snapshot/*"
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:CreateSnapshot",
+          "ec2:AttachVolume",
+          "ec2:DetachVolume",
+          "ec2:ModifyVolume",
+          "ec2:DescribeAvailabilityZones",
+          "ec2:DescribeInstances",
+          "ec2:DescribeSnapshots",
+          "ec2:DescribeTags",
+          "ec2:DescribeVolumes",
+          "ec2:DescribeVolumesModifications"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:CreateTags"
+        ],
+        "Resource" : [
+          "arn:aws:ec2:*:*:volume/*",
+          "arn:aws:ec2:*:*:snapshot/*"
+        ],
+        "Condition" : {
+          "StringEquals" : {
+            "ec2:CreateAction" : [
+              "CreateVolume",
+              "CreateSnapshot"
             ]
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ec2:CreateVolume"
-            ],
-            "Resource": "*",
-            "Condition": {
-                "StringLike": {
-                    "aws:RequestTag/ebs.csi.aws.com/cluster": "true"
-                }
-            }
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ec2:CreateVolume"
-            ],
-            "Resource": "*",
-            "Condition": {
-                "StringLike": {
-                    "aws:RequestTag/CSIVolumeName": "*"
-                }
-            }
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ec2:DeleteVolume"
-            ],
-            "Resource": "*",
-            "Condition": {
-                "StringLike": {
-                    "ec2:ResourceTag/CSIVolumeName": "*"
-                }
-            }
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ec2:DeleteVolume"
-            ],
-            "Resource": "*",
-            "Condition": {
-                "StringLike": {
-                    "ec2:ResourceTag/ebs.csi.aws.com/cluster": "true"
-                }
-            }
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ec2:DeleteSnapshot"
-            ],
-            "Resource": "*",
-            "Condition": {
-                "StringLike": {
-                    "ec2:ResourceTag/CSIVolumeSnapshotName": "*"
-                }
-            }
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ec2:DeleteSnapshot"
-            ],
-            "Resource": "*",
-            "Condition": {
-                "StringLike": {
-                    "ec2:ResourceTag/ebs.csi.aws.com/cluster": "true"
-                }
-            }
+          }
         }
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:DeleteTags"
+        ],
+        "Resource" : [
+          "arn:aws:ec2:*:*:volume/*",
+          "arn:aws:ec2:*:*:snapshot/*"
+        ]
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:CreateVolume"
+        ],
+        "Resource" : "*",
+        "Condition" : {
+          "StringLike" : {
+            "aws:RequestTag/ebs.csi.aws.com/cluster" : "true"
+          }
+        }
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:CreateVolume"
+        ],
+        "Resource" : "*",
+        "Condition" : {
+          "StringLike" : {
+            "aws:RequestTag/CSIVolumeName" : "*"
+          }
+        }
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:DeleteVolume"
+        ],
+        "Resource" : "*",
+        "Condition" : {
+          "StringLike" : {
+            "ec2:ResourceTag/CSIVolumeName" : "*"
+          }
+        }
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:DeleteVolume"
+        ],
+        "Resource" : "*",
+        "Condition" : {
+          "StringLike" : {
+            "ec2:ResourceTag/ebs.csi.aws.com/cluster" : "true"
+          }
+        }
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:DeleteSnapshot"
+        ],
+        "Resource" : "*",
+        "Condition" : {
+          "StringLike" : {
+            "ec2:ResourceTag/CSIVolumeSnapshotName" : "*"
+          }
+        }
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:DeleteSnapshot"
+        ],
+        "Resource" : "*",
+        "Condition" : {
+          "StringLike" : {
+            "ec2:ResourceTag/ebs.csi.aws.com/cluster" : "true"
+          }
+        }
+      }
     ]
-})
+  })
 }
 
 
@@ -490,20 +503,20 @@ resource "aws_iam_role_policy_attachment" "node_group_kms_policy" {
 
 resource "aws_iam_policy" "pass_role_policy" {
   name = "pass_role_policy"
- 
+
   policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "Statement1",
-            "Effect": "Allow",
-            "Action": [
-                "iam:PassRole"
-            ],
-            "Resource": "*"
-        }
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "Statement1",
+        "Effect" : "Allow",
+        "Action" : [
+          "iam:PassRole"
+        ],
+        "Resource" : "*"
+      }
     ]
-})
+  })
 }
 
 resource "aws_iam_role_policy_attachment" "pass_role_policy" {
@@ -543,7 +556,7 @@ resource "aws_iam_role_policy_attachment" "ebs-pod-identity-policy" {
 resource "aws_iam_role_policy_attachment" "ebs-pod-identity-custom-policy" {
   policy_arn = aws_iam_policy.ebs_csi_custom_policy.arn
   role       = aws_iam_role.ebs-pod-identity-role.name
-  depends_on = [ aws_iam_role.ebs-pod-identity-role, aws_iam_policy.ebs_csi_custom_policy ]
+  depends_on = [aws_iam_role.ebs-pod-identity-role, aws_iam_policy.ebs_csi_custom_policy]
 }
 
 
