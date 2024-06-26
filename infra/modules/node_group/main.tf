@@ -6,9 +6,9 @@ resource "aws_eks_node_group" "node_group" {
   node_role_arn = var.node_group_iam_role.arn
   count         = length(var.public_subnets)
   subnet_ids = [
-    # var.public_subnets[0].id,
-    # var.public_subnets[1].id,
-    # var.public_subnets[2].id,
+    var.public_subnets[0].id,
+    var.public_subnets[1].id,
+    var.public_subnets[2].id,
     var.private_subnets[0].id,
     var.private_subnets[1].id,
     var.private_subnets[2].id

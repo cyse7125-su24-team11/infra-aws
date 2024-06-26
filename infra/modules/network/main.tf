@@ -7,7 +7,7 @@ resource "aws_vpc" "eks_vpc" {
   tags = {
     Name = var.vpc_name
   }
-  enable_dns_support = true
+  enable_dns_support   = true
   enable_dns_hostnames = true
 }
 
@@ -34,8 +34,9 @@ resource "aws_route_table" "public_route_table" {
   }
   tags = {
     Name = var.route_table_name
+
   }
-  depends_on = [aws_internet_gateway.gw ]
+  depends_on = [aws_internet_gateway.gw]
 }
 
 resource "aws_subnet" "public_subnets" {
@@ -48,6 +49,8 @@ resource "aws_subnet" "public_subnets" {
   tags = {
     "Name"                                  = "${var.vpc_name}-public-subnet-${count.index}"
     "kubernetes.io/cluster/${var.vpc_name}" = "shared"
+    "kubernetes.io/role/elb" = 1
+    KubernetesCluster = var.vpc_name
   }
   depends_on = [aws_vpc.eks_vpc]
 }
@@ -96,6 +99,8 @@ resource "aws_subnet" "private_subnets" {
   tags = {
     "Name"                                  = "${var.vpc_name}-private-subnet-${count.index}"
     "kubernetes.io/cluster/${var.vpc_name}" = "shared"
+    "kubernetes.io/role/internal-elb" = 1
+    KubernetesCluster = var.vpc_name
   }
   depends_on = [aws_vpc.eks_vpc]
 }
@@ -137,11 +142,11 @@ resource "aws_security_group" "eks_sg" {
   vpc_id = aws_vpc.eks_vpc.id
 
   ingress {
-    protocol    = "-1"
+    protocol = "-1"
     # cidr_blocks = [var.internet_gateway]
-    from_port   = 0
-    to_port     = 0
-    self = true
+    from_port = 0
+    to_port   = 0
+    self      = true
   }
   egress {
     from_port   = 0
