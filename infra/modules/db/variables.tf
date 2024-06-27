@@ -1,5 +1,7 @@
 variable "kubeconfig" {}
-variable "cve_consumer_app_ns" {}
+variable "region" {}
+variable "eks_name" {}
+# variable "cve_consumer_app_ns" {}
 
 variable "postgresql" {
     default = "postgresql"

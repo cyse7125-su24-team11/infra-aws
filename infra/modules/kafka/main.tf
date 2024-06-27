@@ -123,7 +123,7 @@ resource "helm_release" "kafka" {
       topics: 
       - name: push_cve_records
         replicationFactor: 3
-        numPartitions: 3
+        numPartitions: 6
         config:
           max.message.bytes: 64000
           flush.messages: 1
@@ -176,6 +176,28 @@ resource "helm_release" "kafka" {
     serviceAccount:
       create: true
       automountServiceAccountToken: true
+    listeners:
+      client:
+        containerPort: 9092
+        protocol: PLAINTEXT
+        name: CLIENT
+        sslClientAuth: "required"
+      controller:
+        name: CONTROLLER
+        containerPort: 9093
+        protocol: PLAINTEXT
+        sslClientAuth: "required"
+      interbroker:
+        containerPort: 9094
+        protocol: PLAINTEXT
+        name: INTERNAL
+        sslClientAuth: "required"
+      external:
+        containerPort: 9095
+        protocol: PLAINTEXT
+        name: EXTERNAL
+      securityProtocolMap: CLIENT:PLAINTEXT,CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      advertisedListeners: "CLIENT://kafka-broker-0-external.kafka-ns.svc.cluster.local:9094,INTERNAL://kafka-broker-1-external.kafka-ns.svc.cluster.local:9094,EXTERNAL://kafka-broker-2-external.kafka-ns.svc.cluster.local:9094" 
     EOF
   ]
   depends_on = [ null_resource.update_kubeconfig ]

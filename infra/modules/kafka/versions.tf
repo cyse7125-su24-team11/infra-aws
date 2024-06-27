@@ -1,4 +1,12 @@
 terraform {
+  # required_version = "~> 1.9.0"
+  # cloud {
+  #   organization = "csye7125"
+
+  #   workspaces {
+  #     name = "kafka"
+  #   }
+  # }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
