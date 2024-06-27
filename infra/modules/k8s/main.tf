@@ -13,6 +13,13 @@ provider "kubernetes" {
   }
 }
 
+resource "null_resource" "kubeconfig" {
+  provisioner "local-exec" {
+    command = "aws eks --region ${var.region} update-kubeconfig --name ${var.eks_name}"
+  }
+  depends_on = [var.eks_name]
+}
+
 resource "kubernetes_config_map_v1_data" "aws_auth_configmap" {
   metadata {
     name      = "aws-auth"
@@ -42,20 +49,14 @@ resource "kubernetes_config_map_v1_data" "aws_auth_configmap" {
         - system:masters
     YAML
   }
-  depends_on = [ var.node_group, var.kubeconfig ]
+  depends_on = [ var.node_group, null_resource.kubeconfig ]
 }
 
 resource "kubernetes_namespace" "cve_processor_job_ns" {
   metadata {
     name = "cve-processor-job-ns"
   }
-  depends_on = [ var.kubeconfig ]
+  depends_on = [ null_resource.kubeconfig ]
 }
 
 
-resource "kubernetes_namespace" "cve_consumer_app_ns" {
-  metadata {
-    name = "cve-consumer-app-ns"
-  }
-  depends_on = [ var.kubeconfig ]
-}
