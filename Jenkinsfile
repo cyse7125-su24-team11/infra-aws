@@ -32,7 +32,7 @@ pipeline{
 
             sh '''
             terraform fmt -check -recursive .
-            if [ $? == 0 ]; then
+            if [ $? -eq 0 ]; then
               echo "Terraform script formatted correctly";
             else 
               echo "Terraform script is incorrectly formatted. Please fix it";
