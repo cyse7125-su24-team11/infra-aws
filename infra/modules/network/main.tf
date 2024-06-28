@@ -49,8 +49,8 @@ resource "aws_subnet" "public_subnets" {
   tags = {
     "Name"                                  = "${var.vpc_name}-public-subnet-${count.index}"
     "kubernetes.io/cluster/${var.vpc_name}" = "shared"
-    "kubernetes.io/role/elb" = 1
-    KubernetesCluster = var.vpc_name
+    "kubernetes.io/role/elb"                = 1
+    KubernetesCluster                       = var.vpc_name
   }
   depends_on = [aws_vpc.eks_vpc]
 }
@@ -99,8 +99,8 @@ resource "aws_subnet" "private_subnets" {
   tags = {
     "Name"                                  = "${var.vpc_name}-private-subnet-${count.index}"
     "kubernetes.io/cluster/${var.vpc_name}" = "shared"
-    "kubernetes.io/role/internal-elb" = 1
-    KubernetesCluster = var.vpc_name
+    "kubernetes.io/role/internal-elb"       = 1
+    KubernetesCluster                       = var.vpc_name
   }
   depends_on = [aws_vpc.eks_vpc]
 }

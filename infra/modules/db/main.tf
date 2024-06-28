@@ -42,7 +42,7 @@ resource "kubernetes_namespace" "cve_consumer_app_ns" {
   metadata {
     name = "cve-consumer-app-ns"
   }
-  depends_on = [ null_resource.kubeconfig ]
+  depends_on = [null_resource.kubeconfig]
 }
 
 resource "kubernetes_secret" "postgresql" {
@@ -50,11 +50,11 @@ resource "kubernetes_secret" "postgresql" {
     name      = var.postgresql
     namespace = kubernetes_namespace.cve_consumer_app_ns.metadata[0].name
   }
- 
+
   data = {
     "postgres-password" = random_id.postgres.hex
   }
-  depends_on = [ null_resource.kubeconfig ]
+  depends_on = [null_resource.kubeconfig]
 }
 
 
