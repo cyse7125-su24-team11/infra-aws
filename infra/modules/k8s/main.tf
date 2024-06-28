@@ -49,14 +49,14 @@ resource "kubernetes_config_map_v1_data" "aws_auth_configmap" {
         - system:masters
     YAML
   }
-  depends_on = [ var.node_group, null_resource.kubeconfig ]
+  depends_on = [var.node_group, null_resource.kubeconfig]
 }
 
 resource "kubernetes_namespace" "cve_processor_job_ns" {
   metadata {
     name = "cve-processor-job-ns"
   }
-  depends_on = [ null_resource.kubeconfig ]
+  depends_on = [null_resource.kubeconfig]
 }
 
 
