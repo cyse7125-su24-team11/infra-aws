@@ -101,7 +101,14 @@ resource "helm_release" "kafka" {
         limits:
           cpu: "500m"
           memory: "1024Mi"
-    controller: 
+      autoscaling:
+        hpa:
+          enabled: true
+          minReplicas: 3
+          maxReplicas: 4
+          targetCPU: 50
+          targetMemory: 70
+    controller:
       automountServiceAccountToken: true
       replicaCount: 1
       controllerOnly: true
@@ -120,12 +127,12 @@ resource "helm_release" "kafka" {
     provisioning:
       enabled: true
       automountServiceAccountToken: true
-      topics: 
+      topics:
       - name: push_cve_records
         replicationFactor: 3
         numPartitions: 6
         config:
-          max.message.bytes: 64000
+          max.message.bytes: 10485880
           flush.messages: 1
     externalAccess:
       enabled: true
@@ -140,7 +147,7 @@ resource "helm_release" "kafka" {
         service:
           type: LoadBalancer
           allocateLoadBalancerNodePorts: true
-          loadBalancerSourceRanges: 
+          loadBalancerSourceRanges:
             - ${var.private_subnet_cidrs[0]}
             - ${var.private_subnet_cidrs[1]}
             - ${var.private_subnet_cidrs[2]}
@@ -197,7 +204,10 @@ resource "helm_release" "kafka" {
         protocol: PLAINTEXT
         name: EXTERNAL
       securityProtocolMap: CLIENT:PLAINTEXT,CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
-      advertisedListeners: "CLIENT://kafka-broker-0-external.kafka-ns.svc.cluster.local:9094,INTERNAL://kafka-broker-1-external.kafka-ns.svc.cluster.local:9094,EXTERNAL://kafka-broker-2-external.kafka-ns.svc.cluster.local:9094" 
+      advertisedListeners: "CLIENT://kafka-broker-0-external.kafka-ns.svc.cluster.local:9094,INTERNAL://kafka-broker-0-external.kafka-ns.svc.cluster.local:9094,EXTERNAL://kafka-broker-0-external.kafka-ns.svc.cluster.local:9094"
+    extraConfig:
+      defaultReplicationFactor: 3
+      offsetsTopicReplicationFactor: 3
     EOF
   ]
   depends_on = [ null_resource.update_kubeconfig ]
