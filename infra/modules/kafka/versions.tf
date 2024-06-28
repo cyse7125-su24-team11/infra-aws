@@ -14,7 +14,7 @@ terraform {
     }
     kafka = {
       source  = "mongey/kafka"
-      version = "0.7.1"  # Use the desired version
+      version = "0.7.1" # Use the desired version
     }
   }
 }
