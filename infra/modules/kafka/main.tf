@@ -43,7 +43,7 @@ resource "kubernetes_namespace" "kafka_ns" {
   metadata {
     name = "kafka-ns"
   }
-  depends_on = [ null_resource.update_kubeconfig ]
+  depends_on = [null_resource.update_kubeconfig]
 }
 
 resource "kubernetes_secret" "kafka" {
@@ -51,11 +51,11 @@ resource "kubernetes_secret" "kafka" {
     name      = var.kafka_secret
     namespace = var.kafka_ns
   }
- 
+
   data = {
     kafka-password = random_id.kafka_password.hex
   }
-  depends_on = [ null_resource.update_kubeconfig ]
+  depends_on = [null_resource.update_kubeconfig]
 }
 
 
@@ -70,7 +70,7 @@ resource "kubernetes_storage_class" "ebs_sc" {
   parameters = {
     type = var.ebs_type
   }
-  depends_on = [ null_resource.update_kubeconfig ]
+  depends_on = [null_resource.update_kubeconfig]
 }
 
 data "aws_subnets" "private_subnets" {
@@ -83,11 +83,11 @@ data "aws_subnets" "private_subnets" {
 resource "helm_release" "kafka" {
   name = var.kafka
 
-  namespace = var.kafka_ns
+  namespace  = var.kafka_ns
   repository = var.kafka_bitnami_repo
   # repository = "oci://registry-1.docker.io/bitnamicharts"
-  chart      = var.kafka
-  version    = var.kafka_bitnami_version
+  chart   = var.kafka
+  version = var.kafka_bitnami_version
 
   values = [
     <<EOF
@@ -210,14 +210,14 @@ resource "helm_release" "kafka" {
       offsetsTopicReplicationFactor: 3
     EOF
   ]
-  depends_on = [ null_resource.update_kubeconfig ]
+  depends_on = [null_resource.update_kubeconfig]
 
 }
 
 data "kubernetes_service" "kafka" {
   metadata {
     name      = var.kafka
-    namespace = var.kafka_ns  # Update with your Kafka namespace
+    namespace = var.kafka_ns # Update with your Kafka namespace
   }
 }
 
