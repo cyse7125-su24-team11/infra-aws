@@ -3,6 +3,7 @@ variable "node_group" {}
 variable "node_group_iam_role" {}
 variable "ebs_csi_role" {}
 variable "vpc_cni_role" {}
+variable "ca_role_arn" {}
 variable "kubeconfig" {}
 variable "eks_endpoint" {}
 variable "eks_name" {}

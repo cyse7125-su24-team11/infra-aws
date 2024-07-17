@@ -4,6 +4,7 @@ module "k8s" {
   eks_cluster_role           = module.iam.eks_cluster_role
   ebs_csi_role               = module.iam.ebs_csi_role
   vpc_cni_role               = module.iam.vpc_cni_role
+  ca_role_arn               = module.iam.caRoleArn
   node_group_iam_role        = module.iam.node_group_iam_role
   node_group                 = module.node_group.node_group
   kubeconfig                 = module.eks.kubeconfig
@@ -79,4 +80,16 @@ module "db" {
 module "ca" {
   source = "./modules/ca"
   caRoleArn = module.iam.caRoleArn
+  docker_config_content = var.docker_config_content
+  eks_name = module.eks.cluster.name
+  region   = var.region
+  eks_cluster_role           = module.iam.eks_cluster_role
+  eks_endpoint               = module.eks.cluster.endpoint
+  ebs_csi_role               = module.iam.ebs_csi_role
+  vpc_cni_role               = module.iam.vpc_cni_role
+  ca_role_arn               = module.iam.caRoleArn
+  node_group_iam_role        = module.iam.node_group_iam_role
+  node_group                 = module.node_group.node_group
+  kubeconfig                 = module.eks.kubeconfig
+  certificate_authority_data = base64decode(module.eks.cluster.certificate_authority.0.data)
 }

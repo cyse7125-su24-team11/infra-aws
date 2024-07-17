@@ -43,6 +43,11 @@ resource "kubernetes_config_map_v1_data" "aws_auth_configmap" {
       groups:
         - system:bootstrappers
         - system:nodes
+    - rolearn: ${var.ca_role_arn}
+      username: system:node:{{EC2PrivateDNSName}}
+      groups:
+        - system:bootstrappers
+        - system:nodes
     - rolearn: ${var.eks_cluster_role}
       username: kubectl-access-user
       groups:
