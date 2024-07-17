@@ -12,3 +12,6 @@ variable "ebs_csi_role" {}
 variable "vpc_cni_role" {}
 variable "ca_role_arn" {}
 variable "kubeconfig" {}
+variable "repository_password" {
+  
+}

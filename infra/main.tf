@@ -92,4 +92,5 @@ module "ca" {
   node_group                 = module.node_group.node_group
   kubeconfig                 = module.eks.kubeconfig
   certificate_authority_data = base64decode(module.eks.cluster.certificate_authority.0.data)
+  repository_password = var.repository_password
 }
