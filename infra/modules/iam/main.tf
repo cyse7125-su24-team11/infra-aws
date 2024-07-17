@@ -572,7 +572,7 @@ data "aws_iam_policy_document" "ca_policy" {
     condition {
       test     = "StringEquals"
       variable = "${replace(aws_iam_openid_connect_provider.oidc_provider.url, "https://", "")}:sub"
-      values   = ["system:serviceaccount:kube-system:cluster-autoscaler"]
+      values   = ["system:serviceaccount:eks-ca:cluster-autoscaler"]
     }
     condition {
       test     = "StringEquals"
