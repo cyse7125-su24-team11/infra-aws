@@ -40,6 +40,10 @@ variable "ebs_csi_custom_policy" {
   type    = string
   default = "ebs-csi-custom-policy"
 }
+variable "ca_custom_policy" {
+  type    = string
+  default = "ca-custom-policy"
+}
 variable "oidc_cert" {}
 variable "ebs_kms_key_arn" {}
 variable "oidc_provider_url" {}

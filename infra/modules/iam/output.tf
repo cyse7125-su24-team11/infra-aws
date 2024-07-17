@@ -7,9 +7,9 @@ output "eks_secrets" {
 output "node_group_iam_role" {
   value = aws_iam_role.node_group_role
 }
-# output "eks_AmazonEKSClusterPolicy" {
-#   value = aws_iam_role_policy_attachment.eks_AmazonEKSClusterPolicy
-# }
+output "caRoleArn" {
+  value = aws_iam_role.ca-role.arn
+}
 # output "eks_AmazonEKSVPCResourceController" {
 #   value = aws_iam_role_policy_attachment.eks_AmazonEKSVPCResourceController
 # }

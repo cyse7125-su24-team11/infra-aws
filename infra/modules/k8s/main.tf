@@ -6,11 +6,11 @@ provider "kubernetes" {
   host                   = var.eks_endpoint
   cluster_ca_certificate = var.certificate_authority_data
   token                  = data.aws_eks_cluster_auth.cluster_auth.token
-  exec {
-    api_version = "client.authentication.k8s.io/v1beta1"
-    args        = ["eks", "get-token", "--cluster-name", var.eks_name, "--role-arn", var.eks_cluster_role]
-    command     = "aws"
-  }
+  # exec {
+  #   api_version = "client.authentication.k8s.io/v1beta1"
+  #   args        = ["eks", "get-token", "--cluster-name", var.eks_name, "--role-arn", var.eks_cluster_role]
+  #   command     = "aws"
+  # }
 }
 
 resource "null_resource" "kubeconfig" {
