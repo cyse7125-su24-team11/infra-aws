@@ -7,3 +7,7 @@ variable "region" {
 
 # variable "cluster_auth_token" {}
 variable "docker_config_content" {}
+
+variable "repository_password" {
+  
+}
