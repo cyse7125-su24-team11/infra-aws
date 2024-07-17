@@ -1,3 +1,18 @@
+
+module "k8s" {
+  source                     = "./modules/k8s"
+  eks_cluster_role           = module.iam.eks_cluster_role
+  ebs_csi_role               = module.iam.ebs_csi_role
+  vpc_cni_role               = module.iam.vpc_cni_role
+  node_group_iam_role        = module.iam.node_group_iam_role
+  node_group                 = module.node_group.node_group
+  kubeconfig                 = module.eks.kubeconfig
+  region                     = var.region
+  eks_endpoint               = module.eks.cluster.endpoint
+  eks_name                   = module.eks.cluster.name
+  certificate_authority_data = base64decode(module.eks.cluster.certificate_authority.0.data)
+}
+
 module "network" {
   source = "./modules/network"
 }
@@ -54,23 +69,14 @@ module "node_group" {
 module "db" {
   source     = "./modules/db"
   kubeconfig = module.eks.kubeconfig
-  # cve_consumer_app_ns = module.k8s.cve_consumer_app_ns
   eks_name = module.eks.cluster.name
   region   = var.region
-  # kafka_ns = module.k8s.kafka_ns
-  # cve_processor_job_ns = module.k8s.cve_processor_job_ns
+  eks_cluster_role           = module.iam.eks_cluster_role
+  eks_endpoint               = module.eks.cluster.endpoint
+  certificate_authority_data = base64decode(module.eks.cluster.certificate_authority.0.data)
 }
 
-module "k8s" {
-  source                     = "./modules/k8s"
-  eks_cluster_role           = module.iam.eks_cluster_role
-  ebs_csi_role               = module.iam.ebs_csi_role
-  vpc_cni_role               = module.iam.vpc_cni_role
-  node_group_iam_role        = module.iam.node_group_iam_role
-  node_group                 = module.node_group.node_group
-  kubeconfig                 = module.eks.kubeconfig
-  region                     = var.region
-  eks_endpoint               = module.eks.cluster.endpoint
-  eks_name                   = module.eks.cluster.name
-  certificate_authority_data = base64decode(module.eks.cluster.certificate_authority.0.data)
+module "ca" {
+  source = "./modules/ca"
+  caRoleArn = module.iam.caRoleArn
 }

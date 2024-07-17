@@ -9,7 +9,7 @@ variable "vpc_name" {
 }
 variable "aws_availability_zones" {
   type    = list(string)
-  default = ["us-east-1a", "us-east-1b", "us-east-1c"]
+  default = ["us-east-1a", "us-east-1b", "us-east-1d"]
 }
 variable "eks_vpc_cidr_block" {
   type    = string

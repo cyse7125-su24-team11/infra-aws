@@ -28,21 +28,21 @@ provider "aws" {
   # profile                  = "dev"
 }
 
-# provider "kubernetes" {
-#   host                   = module.eks.cluster.endpoint
-#   cluster_ca_certificate = base64decode(module.eks.cluster.certificate_authority.0.data)
-#   token                  = module.k8s.cluster_auth_token
-#   exec {
-#     api_version = "client.authentication.k8s.io/v1beta1"
-#     args        = ["eks", "get-token", "--cluster-name", module.eks.cluster.name, "--role-arn", module.iam.eks_cluster_role]
-#     command     = "aws"
-#   }
-# }
+provider "kubernetes" {
+  host                   = module.eks.cluster.endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster.certificate_authority.0.data)
+  token                  = module.k8s.cluster_auth_token
+  # exec {
+  #   api_version = "client.authentication.k8s.io/v1beta1"
+  #   args        = ["eks", "get-token", "--cluster-name", module.eks.cluster.name, "--role-arn", module.iam.eks_cluster_role]
+  #   command     = "aws"
+  # }
+}
 
-# provider "helm" {
-#   kubernetes {
-#     host                   = module.eks.cluster.endpoint
-#     cluster_ca_certificate = base64decode(module.eks.cluster.certificate_authority.0.data)
-#     token                  = module.k8s.cluster_auth_token
-#   }
-# }
+provider "helm" {
+  kubernetes {
+    host                   = module.eks.cluster.endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster.certificate_authority.0.data)
+    token                  = module.k8s.cluster_auth_token
+  }
+}

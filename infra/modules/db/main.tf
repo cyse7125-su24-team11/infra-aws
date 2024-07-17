@@ -2,34 +2,40 @@ resource "random_id" "postgres" {
   byte_length = 8
 }
 
-
 data "aws_eks_cluster_auth" "cluster_auth" {
   name = var.eks_name
+  depends_on = [var.eks_name]
 }
 
-data "aws_eks_cluster" "eks_cluster" {
-  name = var.eks_name
-}
-
-provider "kubernetes" {
-  host                   = data.aws_eks_cluster.eks_cluster.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority.0.data)
-  token                  = data.aws_eks_cluster_auth.cluster_auth.token
-  exec {
-    api_version = "client.authentication.k8s.io/v1beta1"
-    args        = ["eks", "get-token", "--cluster-name", var.eks_name, "--role-arn", data.aws_eks_cluster.eks_cluster.role_arn]
-    command     = "aws"
-  }
-}
+# provider "kubernetes" {
+#   host                   = var.eks_endpoint
+#   cluster_ca_certificate = var.certificate_authority_data
+#   token                  = data.aws_eks_cluster_auth.cluster_auth.token
+#   exec {
+#     api_version = "client.authentication.k8s.io/v1beta1"
+#     args        = ["eks", "get-token", "--cluster-name", var.eks_name, "--role-arn", var.eks_cluster_role]
+#     command     = "aws"
+#   }
+# }
 
 
-provider "helm" {
-  kubernetes {
-    host                   = data.aws_eks_cluster.eks_cluster.endpoint
-    cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority.0.data)
-    token                  = data.aws_eks_cluster_auth.cluster_auth.token
-  }
-}
+# provider "helm" {
+#   kubernetes {
+#     host                   = var.eks_endpoint
+#     cluster_ca_certificate = var.certificate_authority_data
+#     token                  = data.aws_eks_cluster_auth.cluster_auth.token
+#     exec {
+#       api_version = "client.authentication.k8s.io/v1beta1"
+#       args        = ["eks", "get-token", "--cluster-name", var.eks_name, "--role-arn", var.eks_cluster_role]
+#       command     = "aws"
+#     }
+#   }
+# }
+
+# data "aws_eks_cluster" "eks_cluster" {
+#   name = var.eks_name
+#   depends_on = [var.eks_name]
+# }
 
 resource "null_resource" "kubeconfig" {
   provisioner "local-exec" {
@@ -56,25 +62,6 @@ resource "kubernetes_secret" "postgresql" {
   }
   depends_on = [null_resource.kubeconfig]
 }
-
-
-# resource "kubernetes_persistent_volume_claim" "postgres_db_ebs_pvc" {
-#   metadata {
-#     name      = "postgres-db-ebs-pvc"
-#     namespace = var.cve_consumer_app_ns
-#   }
-
-#   spec {
-#     access_modes = ["ReadWriteOnce"]
-#     resources {
-#       requests {
-#         memory = "10Gi"
-#       }
-#     }
-#     storage_class_name = var.ebs_sc
-#   }
-#   depends_on = [null_resource.kubeconfig]
-# }
 
 resource "helm_release" "postgresql" {
   name       = var.postgresql
