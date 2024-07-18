@@ -3,7 +3,6 @@ data "aws_eks_cluster_auth" "cluster_auth" {
   name = var.eks_name
 }
 
-
 provider "kubernetes" {
   host                   = var.eks_endpoint
   cluster_ca_certificate = var.certificate_authority_data
@@ -28,8 +27,6 @@ provider "helm" {
   }
 }
 
-
-
 resource "null_resource" "kubeconfig" {
   provisioner "local-exec" {
     command = "aws eks --region ${var.region} update-kubeconfig --name ${var.eks_name}"
@@ -40,19 +37,19 @@ resource "null_resource" "kubeconfig" {
 
 resource "kubernetes_namespace" "autoscaler_ns" {
   metadata {
-    name = "eks-ca"
+    name = var.autoscaler_ns
   }
   depends_on = [null_resource.kubeconfig]
 }
 
 
-resource "helm_release" "ca" {
-  name       = "eks-autoscaler"
-  repository = "https://raw.githubusercontent.com/cyse7125-su24-team11/ca-helm-registry/main/"
-  chart      = "autoscaler"
-  version    = "0.1.0"
-  repository_username = "maheshpoojaryneu"
-  repository_password = var.repository_password 
+resource "helm_release" "cluster_autoscaler" {
+  name       = var.autoscaler_name
+  repository = var.autoscaler_repo
+  chart      = var.autoscaler_chart
+  version    = var.autoscaler_version
+  repository_username = var.helm_repo_username
+  repository_password = var.helm_repo_token
   namespace = kubernetes_namespace.autoscaler_ns.metadata[0].name
 
   set {
@@ -65,3 +62,4 @@ resource "helm_release" "ca" {
     value = jsonencode(var.docker_config_content)
   }
 }
+

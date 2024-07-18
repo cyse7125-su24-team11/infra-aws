@@ -87,10 +87,12 @@ module "ca" {
   eks_endpoint               = module.eks.cluster.endpoint
   ebs_csi_role               = module.iam.ebs_csi_role
   vpc_cni_role               = module.iam.vpc_cni_role
-  ca_role_arn               = module.iam.caRoleArn
+  ca_role_arn                = module.iam.caRoleArn
   node_group_iam_role        = module.iam.node_group_iam_role
   node_group                 = module.node_group.node_group
   kubeconfig                 = module.eks.kubeconfig
   certificate_authority_data = base64decode(module.eks.cluster.certificate_authority.0.data)
-  repository_password = var.repository_password
+  helm_repo_token            = var.helm_repo_token
+  private_subnets                               = module.network.private_subnets
+  public_subnets                                = module.network.public_subnets
 }
