@@ -52,7 +52,7 @@ resource "helm_release" "ca" {
   chart      = "autoscaler"
   version    = "0.1.0"
   repository_username = "maheshpoojaryneu"
-  repository_password = "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"
+  repository_password = var.repository_password 
   namespace = kubernetes_namespace.autoscaler_ns.metadata[0].name
 
   set {
