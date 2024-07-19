@@ -4,7 +4,7 @@ module "k8s" {
   eks_cluster_role           = module.iam.eks_cluster_role
   ebs_csi_role               = module.iam.ebs_csi_role
   vpc_cni_role               = module.iam.vpc_cni_role
-  ca_role_arn               = module.iam.caRoleArn
+  ca_role_arn                = module.iam.caRoleArn
   node_group_iam_role        = module.iam.node_group_iam_role
   node_group                 = module.node_group.node_group
   kubeconfig                 = module.eks.kubeconfig
@@ -45,17 +45,18 @@ module "kms" {
 }
 
 module "node_group" {
-  source                                        = "./modules/node_group"
-  eks_cluster                                   = module.eks.cluster
-  eks_cluster_name                              = module.eks.eks_cluster_name
-  private_subnets                               = module.network.private_subnets
-  public_subnets                                = module.network.public_subnets
-  node_group_iam_role                           = module.iam.node_group_iam_role
-  oidc_provider                                 = module.iam.oidc_provider
-  ebs_csi                                       = module.eks.ebs_csi
-  node_group_AmazonEKS_CNI_Policy               = module.iam.node_group_AmazonEKS_CNI_Policy
-  node_group_AmazonEKSWorkerNodePolicy          = module.iam.node_group_AmazonEKSWorkerNodePolicy
-  node_group_AmazonEC2ContainerRegistryReadOnly = module.iam.node_group_AmazonEC2ContainerRegistryReadOnly
+  source                                           = "./modules/node_group"
+  eks_cluster                                      = module.eks.cluster
+  eks_cluster_name                                 = module.eks.eks_cluster_name
+  private_subnets                                  = module.network.private_subnets
+  public_subnets                                   = module.network.public_subnets
+  node_group_iam_role                              = module.iam.node_group_iam_role
+  oidc_provider                                    = module.iam.oidc_provider
+  ebs_csi                                          = module.eks.ebs_csi
+  node_group_AmazonEKS_CNI_IAM                     = module.iam.node_group_AmazonEKS_CNI_Policy
+  node_group_AmazonEKSWorkerNodeIAM                = module.iam.node_group_AmazonEKSWorkerNodePolicy
+  node_group_AmazonEC2ContainerRegistryReadOnlyIAM = module.iam.node_group_AmazonEC2ContainerRegistryReadOnly
+  eks_sg                                           = module.network.eks_sg
 }
 
 # module "kafka" {
@@ -68,21 +69,21 @@ module "node_group" {
 # }
 
 module "db" {
-  source     = "./modules/db"
-  kubeconfig = module.eks.kubeconfig
-  eks_name = module.eks.cluster.name
-  region   = var.region
+  source                     = "./modules/db"
+  kubeconfig                 = module.eks.kubeconfig
+  eks_name                   = module.eks.cluster.name
+  region                     = var.region
   eks_cluster_role           = module.iam.eks_cluster_role
   eks_endpoint               = module.eks.cluster.endpoint
   certificate_authority_data = base64decode(module.eks.cluster.certificate_authority.0.data)
 }
 
 module "ca" {
-  source = "./modules/ca"
-  caRoleArn = module.iam.caRoleArn
-  docker_config_content = var.docker_config_content
-  eks_name = module.eks.cluster.name
-  region   = var.region
+  source                     = "./modules/ca"
+  caRoleArn                  = module.iam.caRoleArn
+  docker_config_content      = var.docker_config_content
+  eks_name                   = module.eks.cluster.name
+  region                     = var.region
   eks_cluster_role           = module.iam.eks_cluster_role
   eks_endpoint               = module.eks.cluster.endpoint
   ebs_csi_role               = module.iam.ebs_csi_role
@@ -93,6 +94,6 @@ module "ca" {
   kubeconfig                 = module.eks.kubeconfig
   certificate_authority_data = base64decode(module.eks.cluster.certificate_authority.0.data)
   helm_repo_token            = var.helm_repo_token
-  private_subnets                               = module.network.private_subnets
-  public_subnets                                = module.network.public_subnets
+  private_subnets            = module.network.private_subnets
+  public_subnets             = module.network.public_subnets
 }

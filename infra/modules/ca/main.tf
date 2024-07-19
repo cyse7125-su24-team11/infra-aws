@@ -42,7 +42,6 @@ resource "kubernetes_namespace" "autoscaler_ns" {
   depends_on = [null_resource.kubeconfig]
 }
 
-
 resource "helm_release" "cluster_autoscaler" {
   name       = var.autoscaler_name
   repository = var.autoscaler_repo

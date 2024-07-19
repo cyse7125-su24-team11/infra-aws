@@ -4,11 +4,12 @@ variable "node_group_iam_role" {}
 variable "private_subnets" {}
 variable "public_subnets" {}
 variable "oidc_provider" {}
+variable "eks_sg" {}
 variable "ebs_csi" {}
 
-variable "node_group_AmazonEC2ContainerRegistryReadOnly" {}
-variable "node_group_AmazonEKSWorkerNodePolicy" {}
-variable "node_group_AmazonEKS_CNI_Policy" {}
+variable "node_group_AmazonEC2ContainerRegistryReadOnlyIAM" {}
+variable "node_group_AmazonEKSWorkerNodeIAM" {}
+variable "node_group_AmazonEKS_CNI_IAM" {}
 
 variable "k8s_version" {
   type    = string
@@ -47,7 +48,7 @@ variable "desired_size" {
 
 variable "max_size" {
   type    = number
-  default = 3
+  default = 6
 }
 
 variable "min_size" {
