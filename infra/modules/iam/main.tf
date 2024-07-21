@@ -622,7 +622,7 @@ resource "aws_iam_policy" "ca_custom_policy" {
 
 resource "aws_iam_role" "ca-role" {
   name               = "eks-ca"
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+  assume_role_policy = data.aws_iam_policy_document.ca_policy.json
 }
 
 resource "aws_iam_role_policy_attachment" "ca-policy" {
