@@ -42,6 +42,27 @@ resource "kubernetes_namespace" "autoscaler_ns" {
   depends_on = [null_resource.kubeconfig]
 }
 
+resource "kubernetes_secret" "regcred" {
+  metadata {
+    name = "regcred"
+    namespace = "eks-ca"
+  }
+
+  type = "kubernetes.io/dockerconfigjson"
+
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "https://index.docker.io/v1/" = {
+          username = var.username
+          password = var.password
+          auth     = base64encode("${var.username}:${var.password}")
+        }
+      }
+    })
+  }
+}
+
 resource "helm_release" "cluster_autoscaler" {
   name       = var.autoscaler_name
   repository = var.autoscaler_repo
@@ -56,9 +77,10 @@ resource "helm_release" "cluster_autoscaler" {
     value = var.caRoleArn
   }
 
-  set {
-    name  = "dockerconfigjson"
-    value = jsonencode(var.docker_config_content)
-  }
+depends_on = [kubernetes_secret.regcred]
+  # set {
+  #   name  = "dockerconfigjson"
+  #   value = jsonencode(var.docker_config_content)
+  # }
 }
 

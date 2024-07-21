@@ -26,7 +26,7 @@ variable "autoscaler_name" {
 }
 
 variable "autoscaler_repo" {
-    default = "https://raw.githubusercontent.com/cyse7125-su24-team11/ca-helm-registry/main/"
+    default = "https://raw.githubusercontent.com/maheshpoojaryneu/ca-helm-registry/main"
 }
 
 variable "autoscaler_chart" {
@@ -39,4 +39,12 @@ variable "autoscaler_version" {
 
 variable "helm_repo_username" {
     default = "maheshpoojaryneu"
+}
+
+variable "username" {
+  
+}
+
+variable "password" {
+  
 }

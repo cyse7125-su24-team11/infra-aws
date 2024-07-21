@@ -93,7 +93,7 @@ resource "helm_release" "kafka" {
     <<EOF
     broker:
       automountServiceAccountToken: true
-      replicaCount: 3
+      replicaCount: 1
       resources:
         requests:
           cpu: "200m"
