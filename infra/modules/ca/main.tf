@@ -78,9 +78,6 @@ resource "helm_release" "cluster_autoscaler" {
   }
 
 depends_on = [kubernetes_secret.regcred]
-  # set {
-  #   name  = "dockerconfigjson"
-  #   value = jsonencode(var.docker_config_content)
-  # }
+
 }
 
