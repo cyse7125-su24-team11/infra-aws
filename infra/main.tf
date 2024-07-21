@@ -96,4 +96,6 @@ module "ca" {
   helm_repo_token            = var.helm_repo_token
   private_subnets            = module.network.private_subnets
   public_subnets             = module.network.public_subnets
+  username                   = var.username
+  password                   = var.password
 }
