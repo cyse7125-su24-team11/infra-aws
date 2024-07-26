@@ -104,7 +104,7 @@ resource "helm_release" "kafka" {
       autoscaling:
         hpa:
           enabled: true
-          minReplicas: 3
+          minReplicas: 1
           maxReplicas: 4
           targetCPU: 50
           targetMemory: 70
