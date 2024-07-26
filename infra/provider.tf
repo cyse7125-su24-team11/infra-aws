@@ -1,10 +1,10 @@
 terraform {
-  # required_version = "~>1.5.3"
-  # backend "s3" {
-  #   bucket = "terraform-csye7125"
-  #   key    = "eks.tfstate"
-  #   region = "us-east-1"
-  # }
+  required_version = "~>1.8.3"
+  backend "s3" {
+    bucket = "terraform-csye7125"
+    key    = "eks.tfstate"
+    region = "us-east-1"
+  }
   # cloud {
   #   organization = "csye7125"
   #   workspaces {

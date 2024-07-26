@@ -65,3 +65,9 @@ resource "kubernetes_namespace" "cve_processor_job_ns" {
 }
 
 
+resource "kubernetes_namespace" "cve_operator" {
+  metadata {
+    name = "operator"
+  }
+  depends_on = [null_resource.kubeconfig]
+}

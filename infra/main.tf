@@ -81,7 +81,6 @@ module "db" {
 module "ca" {
   source                     = "./modules/ca"
   caRoleArn                  = module.iam.caRoleArn
-  docker_config_content      = var.docker_config_content
   eks_name                   = module.eks.cluster.name
   region                     = var.region
   eks_cluster_role           = module.iam.eks_cluster_role
