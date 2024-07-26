@@ -6,7 +6,7 @@ variable "region" {
 # variable "eks" {}
 
 # variable "cluster_auth_token" {}
-variable "docker_config_content" {}
+# variable "docker_config_content" {}
 
 variable "helm_repo_token" {}
 variable "username" {

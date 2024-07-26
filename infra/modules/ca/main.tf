@@ -46,6 +46,15 @@ resource "kubernetes_secret" "regcred" {
   metadata {
     name = "regcred"
     namespace = "eks-ca"
+
+     annotations = {
+      "meta.helm.sh/release-name"      = "eks-autoscaler"
+      "meta.helm.sh/release-namespace" = "eks-ca"
+    }
+
+    labels = {
+      "app.kubernetes.io/managed-by" = "Helm"
+    }
   }
 
   type = "kubernetes.io/dockerconfigjson"
@@ -61,6 +70,7 @@ resource "kubernetes_secret" "regcred" {
       }
     })
   }
+  depends_on = [kubernetes_namespace.autoscaler_ns]
 }
 
 resource "helm_release" "cluster_autoscaler" {

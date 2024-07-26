@@ -1,5 +1,5 @@
 variable caRoleArn {}
-variable "docker_config_content" {}
+# variable "docker_config_content" {}
 variable "eks_endpoint" {}
 variable "eks_name" {}
 variable "certificate_authority_data" {}
