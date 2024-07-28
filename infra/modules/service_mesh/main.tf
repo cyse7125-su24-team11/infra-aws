@@ -57,6 +57,8 @@ resource "helm_release" "istio_ingress" {
   values = [
     <<EOF
 type: LoadBalancer
+gateway:
+    profile: "remote"
 EOF
   ]
 
