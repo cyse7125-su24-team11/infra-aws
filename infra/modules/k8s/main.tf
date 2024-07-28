@@ -59,7 +59,10 @@ resource "kubernetes_config_map_v1_data" "aws_auth_configmap" {
 
 resource "kubernetes_namespace" "cve_processor_job_ns" {
   metadata {
-    name = "cve-processor-job-ns"
+    name = "producer"
+     labels = {
+      "istio-injection" = "enabled"
+    }
   }
   depends_on = [null_resource.kubeconfig]
 }
@@ -68,6 +71,9 @@ resource "kubernetes_namespace" "cve_processor_job_ns" {
 resource "kubernetes_namespace" "cve_operator" {
   metadata {
     name = "operator"
+     labels = {
+      "istio-injection" = "enabled"
+    }
   }
   depends_on = [null_resource.kubeconfig]
 }

@@ -37,3 +37,7 @@ output "node_group_AmazonEKSWorkerNodePolicy" {
 output "node_group_AmazonEC2ContainerRegistryReadOnly" {
   value = aws_iam_role_policy_attachment.node_group_AmazonEC2ContainerRegistryReadOnly
 }
+
+output "cloudwatch_role_arn" {
+  value = aws_iam_role.cloudwatch-role.arn
+}

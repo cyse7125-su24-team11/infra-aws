@@ -46,7 +46,10 @@ resource "null_resource" "kubeconfig" {
 
 resource "kubernetes_namespace" "cve_consumer_app_ns" {
   metadata {
-    name = "cve-consumer-app-ns"
+    name = "consumer"
+     labels = {
+      "istio-injection" = "enabled"
+    }
   }
   depends_on = [null_resource.kubeconfig]
 }

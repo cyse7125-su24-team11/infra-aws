@@ -42,6 +42,9 @@ resource "null_resource" "update_kubeconfig" {
 resource "kubernetes_namespace" "kafka_ns" {
   metadata {
     name = "kafka-ns"
+     labels = {
+      "istio-injection" = "enabled"
+    }
   }
   depends_on = [null_resource.update_kubeconfig]
 }
