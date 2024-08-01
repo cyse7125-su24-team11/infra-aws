@@ -99,11 +99,8 @@ module "ca" {
   password                   = var.password
 }
 
-module "cloudwatch-observability" {
-  source                     = "./modules/addons/cloudwatch"
-  eks_cluster_name           = module.eks.cluster.name
-  cloudwatch_role_arn       = module.iam.cloudwatch_role_arn  
+module "istio" {
 
-  depends_on = [ module.eks ]
+  source = "./modules/service_mesh"
   
 }
