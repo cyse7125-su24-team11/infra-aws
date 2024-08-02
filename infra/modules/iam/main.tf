@@ -43,12 +43,6 @@ resource "aws_iam_role_policy_attachment" "eks_AmazonEKSClusterPolicy" {
   depends_on = [aws_iam_role.eks_cluster_role]
 }
 
-# resource "aws_iam_role_policy_attachment" "eks_AmazonEKSVPCResourceController" {
-#   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
-#   role       = aws_iam_role.eks_cluster_role.name
-#   depends_on = [aws_iam_role.eks_cluster_role]
-# }
-
 resource "aws_iam_role_policy_attachment" "eks-AmazonEKSServicePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
   role       = aws_iam_role.eks_cluster_role.name
@@ -59,12 +53,6 @@ resource "aws_iam_role_policy_attachment" "eks_AmazonEKSWorkerNodePolicy" {
   role       = aws_iam_role.eks_cluster_role.name
   depends_on = [aws_iam_role.eks_cluster_role]
 }
-
-# resource "aws_iam_role_policy_attachment" "eks_AmazonEKS_CNI_Policy" {
-#   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-#   role       = aws_iam_role.eks_cluster_role.name
-#   depends_on = [ aws_iam_role.eks_cluster_role ]
-# }
 
 resource "aws_iam_role_policy_attachment" "eks_AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
@@ -465,6 +453,26 @@ data "aws_iam_policy_document" "node_group_assume_role_policy" {
   }
 }
 
+resource "aws_iam_policy" "nodegroup_ec2_policy" {
+  name = "nodegroup_ec2_policy"
+
+  policy = jsonencode(
+    {
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Action" : [
+            "ec2:DescribeVolumes"
+          ],
+          "Resource" : "*",
+          "Effect" : "Allow"
+        }
+      ]
+  })
+}
+
+
+
 resource "aws_iam_role" "node_group_role" {
   name                  = var.node_group_role
   assume_role_policy    = data.aws_iam_policy_document.node_group_assume_role_policy.json
@@ -494,6 +502,13 @@ resource "aws_iam_role_policy_attachment" "node_group_AmazonEC2ContainerRegistry
   role       = aws_iam_role.node_group_role.name
   depends_on = [aws_iam_role.node_group_role]
 }
+
+resource "aws_iam_role_policy_attachment" "node_group_CloudWatchAgentServerPolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+  role       = aws_iam_role.node_group_role.name
+  depends_on = [aws_iam_role.node_group_role]
+}
+
 
 resource "aws_iam_role_policy_attachment" "node_group_kms_policy" {
   policy_arn = aws_iam_policy.ebs_csi_kms_policy.arn
@@ -591,33 +606,33 @@ resource "aws_iam_policy" "ca_custom_policy" {
   name = var.ca_custom_policy
 
   policy = jsonencode({
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "autoscaling:DescribeAutoScalingGroups",
-        "autoscaling:DescribeAutoScalingInstances",
-        "autoscaling:DescribeLaunchConfigurations",
-        "autoscaling:DescribeScalingActivities",
-        "ec2:DescribeImages",
-        "ec2:DescribeInstanceTypes",
-        "ec2:DescribeLaunchTemplateVersions",
-        "ec2:GetInstanceTypesFromInstanceRequirements",
-        "eks:DescribeNodegroup"
-      ],
-      "Resource": ["*"]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "autoscaling:SetDesiredCapacity",
-        "autoscaling:TerminateInstanceInAutoScalingGroup"
-      ],
-      "Resource": ["*"]
-    }
-  ]
-})
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "autoscaling:DescribeAutoScalingGroups",
+          "autoscaling:DescribeAutoScalingInstances",
+          "autoscaling:DescribeLaunchConfigurations",
+          "autoscaling:DescribeScalingActivities",
+          "ec2:DescribeImages",
+          "ec2:DescribeInstanceTypes",
+          "ec2:DescribeLaunchTemplateVersions",
+          "ec2:GetInstanceTypesFromInstanceRequirements",
+          "eks:DescribeNodegroup"
+        ],
+        "Resource" : ["*"]
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "autoscaling:SetDesiredCapacity",
+          "autoscaling:TerminateInstanceInAutoScalingGroup"
+        ],
+        "Resource" : ["*"]
+      }
+    ]
+  })
 }
 
 resource "aws_iam_role" "ca-role" {
@@ -643,7 +658,7 @@ data "aws_iam_policy_document" "cloudwatch-policy" {
     condition {
       test     = "StringEquals"
       variable = "${replace(aws_iam_openid_connect_provider.oidc_provider.url, "https://", "")}:sub"
-      values   = ["system:serviceaccount:kube-system:cloudwatch"]
+      values   = ["system:serviceaccount:amazon-cloudwatch:cloudwatch"]
     }
     condition {
       test     = "StringEquals"
@@ -665,8 +680,63 @@ resource "aws_iam_role" "cloudwatch-role" {
 }
 
 
-resource "aws_iam_role_policy_attachment" "cloudwatch-policy" {
+resource "aws_iam_role_policy_attachment" "cloudwatch_policy" {
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
   role       = aws_iam_role.cloudwatch-role.name
+}
+
+resource "aws_iam_role_policy_attachment" "cloudwatch_logs_policy" {
+  policy_arn = aws_iam_policy.fluentbit_policy.arn
+  role       = aws_iam_role.cloudwatch-role.name
+}
+
+
+
+## EKS ---- Fluentbit Role ---- ##
+##
+##
+
+data "aws_iam_policy_document" "fluentbit_role_policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+
+resource "aws_iam_role" "fluentbit_role" {
+  name               = "FluentBitRole"
+  assume_role_policy = data.aws_iam_policy_document.fluentbit_role_policy.json
+}
+
+resource "aws_iam_policy" "fluentbit_policy" {
+  name        = "FluentBitPolicy"
+  description = "Policy for Fluent Bit to send logs to CloudWatch"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = [
+        "ec2:DescribeTags",
+        "logs:PutLogEvents",
+        "cloudwatch:PutMetricData",
+        "logs:DescribeLogStreams",
+        "logs:DescribeLogGroups",
+        "logs:CreateLogStream",
+        "logs:CreateLogGroup"
+      ]
+      Effect   = "Allow"
+      Resource = "arn:aws:logs:*:*:log-group:fluent-bit-cloudwatch:*"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "fluentbit_policy_attachment" {
+  role       = aws_iam_role.fluentbit_role.name
+  policy_arn = aws_iam_policy.fluentbit_policy.arn
 }
 

@@ -60,7 +60,7 @@ resource "kubernetes_config_map_v1_data" "aws_auth_configmap" {
 resource "kubernetes_namespace" "cve_processor_job_ns" {
   metadata {
     name = "producer"
-     labels = {
+    labels = {
       "istio-injection" = "enabled"
     }
   }
@@ -71,9 +71,65 @@ resource "kubernetes_namespace" "cve_processor_job_ns" {
 resource "kubernetes_namespace" "cve_operator" {
   metadata {
     name = "operator"
-     labels = {
+    labels = {
       "istio-injection" = "enabled"
     }
   }
   depends_on = [null_resource.kubeconfig]
 }
+
+
+##########################################
+##########   Cert Manager   ##############
+##########################################
+
+
+resource "kubernetes_namespace" "cert_manager" {
+  metadata {
+    name = "cert-manager"
+    labels = {
+      "istio-injection" = "enabled"
+    }
+  }
+}
+
+
+resource "helm_release" "cert_manager" {
+  name       = "cert-manager"
+  repository = "https://charts.jetstack.io"
+  chart      = "cert-manager"
+  namespace  = kubernetes_namespace.cert_manager.metadata[0].name
+  version    = "v1.15.1"
+
+  set {
+    name  = "crds.enabled"
+    value = "true"
+  }
+
+  depends_on = [kubernetes_namespace.cert_manager]
+}
+
+# data "http" "cwagent_crds" {
+#   url = "https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/main/k8s-quickstart/cwagent-custom-resource-definitions.yaml"
+# }
+
+# resource "kubernetes_manifest" "cwagent_crds" {
+#   manifest = yamldecode(data.http.cwagent_crds.body)
+#   depends_on = [helm_release.cert_manager]
+# }
+
+# data "http" "cwagent_operator" {
+#   url = "https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/main/k8s-quickstart/cwagent-operator-rendered.yaml"
+# }
+
+# resource "local_file" "cwagent_operator_template" {
+#   content  = chomp(data.http.cwagent_operator.body)
+#   filename = "${path.module}/cwagent-operator-rendered.yaml.tpl"
+# }
+
+# resource "kubernetes_manifest" "cwagent_operator" {
+#   manifest = yamldecode(templatefile("${path.module}/cwagent-operator-rendered.yaml.tpl", {
+#     cluster_name = var.eks_name
+#     region_name  = var.region
+#   }))
+# }

@@ -41,11 +41,11 @@ resource "aws_eks_node_group" "node_group" {
     "k8s.io/cluster-autoscaler/enabled"                 = true
   }
   depends_on = [
-    var.eks_cluster, 
-    var.oidc_provider, 
+    var.eks_cluster,
+    var.oidc_provider,
     var.node_group_AmazonEKS_CNI_IAM,
-    var.node_group_AmazonEKSWorkerNodeIAM, 
-    var.node_group_AmazonEC2ContainerRegistryReadOnlyIAM]
+    var.node_group_AmazonEKSWorkerNodeIAM,
+  var.node_group_AmazonEC2ContainerRegistryReadOnlyIAM]
   # , var.ebs_csi
 }
 
@@ -54,7 +54,7 @@ resource "aws_eks_node_group" "node_group" {
 
 # resource "aws_launch_template" "eks_launch_template" {
 #   name_prefix = "eks_launch_template"
- 
+
 #   # image_id                = "ami-01fccab91b456acc2" #ami_type mentioned in node_group
 #   instance_type           = "c3.large"
 #   key_name                = "ec2"
@@ -64,7 +64,7 @@ resource "aws_eks_node_group" "node_group" {
 #       volume_size = var.disk_size
 #     }
 #   }
-  
+
 #   lifecycle {
 #     create_before_destroy = true
 #   }
@@ -166,8 +166,8 @@ resource "aws_eks_node_group" "node_group" {
 #   max_size             = 6
 #   desired_capacity     = 3
 #   force_delete       = true
- 
- 
+
+
 #   launch_template {
 #     id      = aws_launch_template.eks_launch_template.id
 #     version = "$Latest"
@@ -208,13 +208,13 @@ resource "aws_eks_node_group" "node_group" {
 #   autoscaling_group_name = "${aws_autoscaling_group.eks_asg.name}"
 #   depends_on = [ aws_autoscaling_group.eks_asg ]
 # }
- 
+
 # resource "aws_autoscaling_policy" "scale_down" {
 #   name = "scale_down"
 #   cooldown = 60
 #   adjustment_type = "ChangeInCapacity"
 #   scaling_adjustment = "-1"
 #   autoscaling_group_name = "${aws_autoscaling_group.eks_asg.name}"
- 
+
 #   depends_on = [ aws_autoscaling_group.eks_asg ]
 # }

@@ -38,16 +38,19 @@ resource "null_resource" "kubeconfig" {
 resource "kubernetes_namespace" "autoscaler_ns" {
   metadata {
     name = var.autoscaler_ns
+    labels = {
+      "istio-injection" = "enabled"
+    }
   }
   depends_on = [null_resource.kubeconfig]
 }
 
 resource "kubernetes_secret" "regcred" {
   metadata {
-    name = "regcred"
+    name      = "regcred"
     namespace = "eks-ca"
 
-     annotations = {
+    annotations = {
       "meta.helm.sh/release-name"      = "eks-autoscaler"
       "meta.helm.sh/release-namespace" = "eks-ca"
     }
@@ -74,20 +77,20 @@ resource "kubernetes_secret" "regcred" {
 }
 
 resource "helm_release" "cluster_autoscaler" {
-  name       = var.autoscaler_name
-  repository = var.autoscaler_repo
-  chart      = var.autoscaler_chart
-  version    = var.autoscaler_version
+  name                = var.autoscaler_name
+  repository          = var.autoscaler_repo
+  chart               = var.autoscaler_chart
+  version             = var.autoscaler_version
   repository_username = var.helm_repo_username
   repository_password = var.helm_repo_token
-  namespace = kubernetes_namespace.autoscaler_ns.metadata[0].name
+  namespace           = kubernetes_namespace.autoscaler_ns.metadata[0].name
 
   set {
     name  = "caRoleArn"
     value = var.caRoleArn
   }
 
-depends_on = [kubernetes_secret.regcred]
+  depends_on = [kubernetes_secret.regcred]
   # set {
   #   name  = "dockerconfigjson"
   #   value = jsonencode(var.docker_config_content)

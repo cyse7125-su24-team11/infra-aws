@@ -43,7 +43,7 @@ variable "instance_types" {
 
 variable "desired_size" {
   type    = number
-  default = 3
+  default = 6
 }
 
 variable "max_size" {

@@ -13,16 +13,22 @@ data "aws_subnets" "private_subnets" {
   }
 }
 
+resource "kubernetes_namespace" "istio-ns" {
+  metadata {
+    name = "istio-system"
+  }
+}
+
 resource "helm_release" "istio-base" {
     
-  name = "isito-service-mesh"
+  name = "istio-service-mesh"
   repository = "https://istio-release.storage.googleapis.com/charts"
   chart   = "base"
   version = "1.22.3"
   namespace  = "istio-system"
 
-  create_namespace = true
-  
+  # create_namespace = true
+  depends_on = [ kubernetes_namespace.istio-ns ]
 }
 
 resource "helm_release" "istiod" {
@@ -60,7 +66,6 @@ resource "helm_release" "istio_ingress" {
   chart      = "gateway"
   repository = "https://istio-release.storage.googleapis.com/charts"
   version    = "1.22.3"
-  depends_on = [ helm_release.istio-base, helm_release.istiod ]
   values = [
   <<EOF
 annotations:
@@ -70,7 +75,7 @@ annotations:
   service.beta.kubernetes.io/aws-load-balancer-subnets: "${join(",", data.aws_subnets.private_subnets.ids)}"
 EOF 
   ]
-
+  depends_on = [ helm_release.istio-base, helm_release.istiod ]
 }
 
 resource "kubernetes_manifest" "istio-gateway" {
@@ -95,4 +100,6 @@ resource "kubernetes_manifest" "istio-gateway" {
       }]
     }
   }
+  depends_on = [ helm_release.istio-base, helm_release.istiod, helm_release.istio_ingress ]
+
 }

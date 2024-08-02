@@ -68,15 +68,15 @@ module "node_group" {
 #   private_subnet_cidrs = module.network.private_subnet_cidrs
 # }
 
-module "db" {
-  source                     = "./modules/db"
-  kubeconfig                 = module.eks.kubeconfig
-  eks_name                   = module.eks.cluster.name
-  region                     = var.region
-  eks_cluster_role           = module.iam.eks_cluster_role
-  eks_endpoint               = module.eks.cluster.endpoint
-  certificate_authority_data = base64decode(module.eks.cluster.certificate_authority.0.data)
-}
+# module "db" {
+#   source                     = "./modules/db"
+#   kubeconfig                 = module.eks.kubeconfig
+#   eks_name                   = module.eks.cluster.name
+#   region                     = var.region
+#   eks_cluster_role           = module.iam.eks_cluster_role
+#   eks_endpoint               = module.eks.cluster.endpoint
+#   certificate_authority_data = base64decode(module.eks.cluster.certificate_authority.0.data)
+# }
 
 module "ca" {
   source                     = "./modules/ca"
@@ -100,7 +100,30 @@ module "ca" {
 }
 
 module "istio" {
-
   source = "./modules/service_mesh"
-  
+}
+
+module "cloudwatch-observability" {
+  source                     = "./modules/addons/cloudwatch"
+  eks_cluster_name           = module.eks.cluster.name
+  cloudwatch_role_arn        = module.iam.cloudwatch_role_arn
+  eks_cluster                = module.eks.cluster
+  region                     = var.region
+  eks_cluster_role           = module.iam.eks_cluster_role
+  eks_endpoint               = module.eks.cluster.endpoint
+  certificate_authority_data = base64decode(module.eks.cluster.certificate_authority.0.data)
+
+}
+
+module "fluentbit" {
+  source              = "./modules/addons/fluentbit"
+  aws_region          = var.region
+  cloudwatch_role_arn = module.iam.cloudwatch_role_arn
+  cloudwatch-ns = module.cloudwatch-observability.cloudwatch-ns
+}
+
+module "prometheus" {
+  source      = "./modules/addons/prometheus"
+  pg_password = var.pg_password
+  pg_username = var.pg_password
 }

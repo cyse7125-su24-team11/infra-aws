@@ -4,3 +4,25 @@ sudo touch /.VolumeIcon.icns
 
 
 terraform apply --auto-approve -var helm_repo_token=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 -var "docker_config_content=$(cat /Users/shabinasingh/.docker/config.json)"
+
+
+terraform apply --auto-approve -var helm_repo_token=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 -var username=poojary.m@northeastern.edu -var password= -var aws_cred=/Users/shabinasingh/.aws/credentials -var pg_username=postgres -var pg_password=postgres
+
+
+helm upgrade --install fluent-bit fluent/fluent-bit
+
+helm repo add fluent https://fluent.github.io/helm-charts
+helm repo add jetstack https://charts.jetstack.io --force-update
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add istio https://istio-release.storage.googleapis.com/charts
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+
+
+
+kubectl port-forward -n monitoring svc/prometheus-server 9090:80
+
+kubectl port-forward -n monitoring svc/grafana 3000:80
+
+
+
