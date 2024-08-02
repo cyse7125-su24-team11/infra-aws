@@ -17,6 +17,12 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo add istio https://istio-release.storage.googleapis.com/charts
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 
+curl -L https://istio.io/downloadIstio | sh -
+cd istio-1.x.x
+export PATH=$PWD/bin:$PATH
+istioctl version
+istioctl install --set profile=default -y
+istioctl install -f modules/service_mesh/custom-profile.yaml -y 
 
 
 
