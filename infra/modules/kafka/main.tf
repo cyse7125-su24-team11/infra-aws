@@ -42,7 +42,7 @@ resource "null_resource" "update_kubeconfig" {
 resource "kubernetes_namespace" "kafka_ns" {
   metadata {
     name = "kafka-ns"
-     labels = {
+    labels = {
       "istio-injection" = "enabled"
     }
   }
@@ -94,123 +94,127 @@ resource "helm_release" "kafka" {
 
   values = [
     <<EOF
-    broker:
-      automountServiceAccountToken: true
-      replicaCount: 1
-      resources:
-        requests:
-          cpu: "200m"
-          memory: "512Mi"
-        limits:
-          cpu: "500m"
-          memory: "1024Mi"
-      autoscaling:
-        hpa:
-          enabled: true
-          minReplicas: 1
-          maxReplicas: 4
-          targetCPU: 50
-          targetMemory: 70
-    controller:
-      automountServiceAccountToken: true
-      replicaCount: 1
-      controllerOnly: true
-      resources:
-        requests:
-          cpu: "200m"
-          memory: "512Mi"
-        limits:
-          cpu: "500m"
-          memory: "1024Mi"
-    kraft:
+broker:
+  automountServiceAccountToken: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1024Mi"
+  autoscaling:
+    hpa:
       enabled: true
-      processRoles: broker,controller
-    zookeeper:
-      enabled: false
-    provisioning:
-      enabled: true
+      minReplicas: 1
+      maxReplicas: 4
+      targetCPU: 50
+      targetMemory: 70
+controller:
+  automountServiceAccountToken: true
+  replicaCount: 1
+  controllerOnly: true
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1024Mi"
+kraft:
+  enabled: true
+  processRoles: broker,controller
+zookeeper:
+  enabled: false
+  metrics:
+    enabled: true
+provisioning:
+  enabled: true
+  automountServiceAccountToken: true
+  topics:
+  - name: push_cve_records
+    replicationFactor: 1
+    numPartitions: 6
+externalAccess:
+  enabled: true
+  autoDiscovery:
+    enabled: true
+  broker:
+    ports:
+      external: 9094
+    automountServiceAccountToken: true
+    readinessProbe:
+      initialDelaySeconds: 30
+    service:
+      type: LoadBalancer
+      allocateLoadBalancerNodePorts: true
+      loadBalancerSourceRanges:
+        - ${var.private_subnet_cidrs[0]}
+        - ${var.private_subnet_cidrs[1]}
+        - ${var.private_subnet_cidrs[2]}
+      publishNotReadyAddresses: true
+      loadBalancerAnnotations:
+        "service.beta.kubernetes.io/aws-load-balancer-scheme": "internal"
+        "service.beta.kubernetes.io/aws-load-balancer-subnets": "${join(",", data.aws_subnets.private_subnets.ids)}"
+      annotations:
+        "service.beta.kubernetes.io/aws-load-balancer-scheme": "internal"
+        "service.beta.kubernetes.io/aws-load-balancer-subnets": "${join(",", data.aws_subnets.private_subnets.ids)}"
+  controller:
+    ports:
+      external: 9093
+    readinessProbe:
+      initialDelaySeconds: 30
+    service:
+      type: LoadBalancer
+      allocateLoadBalancerNodePorts: true
       automountServiceAccountToken: true
-      topics:
-      - name: push_cve_records
-        replicationFactor: 3
-        numPartitions: 6
-        config:
-          max.message.bytes: 10485880
-          flush.messages: 1
-    externalAccess:
-      enabled: true
-      autoDiscovery:
-        enabled: true
-      broker:
-        ports:
-          external: 9094
-        automountServiceAccountToken: true
-        readinessProbe:
-          initialDelaySeconds: 30
-        service:
-          type: LoadBalancer
-          allocateLoadBalancerNodePorts: true
-          loadBalancerSourceRanges:
-            - ${var.private_subnet_cidrs[0]}
-            - ${var.private_subnet_cidrs[1]}
-            - ${var.private_subnet_cidrs[2]}
-          publishNotReadyAddresses: true
-          loadBalancerAnnotations:
-            "service.beta.kubernetes.io/aws-load-balancer-scheme": "internal"
-            "service.beta.kubernetes.io/aws-load-balancer-subnets": "${join(",", data.aws_subnets.private_subnets.ids)}"
-          annotations:
-            "service.beta.kubernetes.io/aws-load-balancer-scheme": "internal"
-            "service.beta.kubernetes.io/aws-load-balancer-subnets": "${join(",", data.aws_subnets.private_subnets.ids)}"
-      controller:
-        ports:
-          external: 9093
-        readinessProbe:
-          initialDelaySeconds: 30
-        service:
-          type: LoadBalancer
-          allocateLoadBalancerNodePorts: true
-          automountServiceAccountToken: true
-          publishNotReadyAddresses: true
-          loadBalancerSourceRanges:  
-            - ${var.private_subnet_cidrs[0]}
-            - ${var.private_subnet_cidrs[1]}
-            - ${var.private_subnet_cidrs[2]}
-          loadBalancerAnnotations:
-            "service.beta.kubernetes.io/aws-load-balancer-scheme": "internal"
-            "service.beta.kubernetes.io/aws-load-balancer-subnets": "${join(",", data.aws_subnets.private_subnets.ids)}"
-          annotations:
-            "service.beta.kubernetes.io/aws-load-balancer-scheme": "internal"
-            "service.beta.kubernetes.io/aws-load-balancer-subnets": "${join(",", data.aws_subnets.private_subnets.ids)}"
-    rbac:
-      create: true
-    serviceAccount:
-      create: true
-      automountServiceAccountToken: true
-    listeners:
-      client:
-        containerPort: 9092
-        protocol: PLAINTEXT
-        name: CLIENT
-        sslClientAuth: "required"
-      controller:
-        name: CONTROLLER
-        containerPort: 9093
-        protocol: PLAINTEXT
-        sslClientAuth: "required"
-      interbroker:
-        containerPort: 9094
-        protocol: PLAINTEXT
-        name: INTERNAL
-        sslClientAuth: "required"
-      external:
-        containerPort: 9095
-        protocol: PLAINTEXT
-        name: EXTERNAL
-      securityProtocolMap: CLIENT:PLAINTEXT,CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
-      advertisedListeners: "CLIENT://kafka-broker-0-external.kafka-ns.svc.cluster.local:9094,INTERNAL://kafka-broker-0-external.kafka-ns.svc.cluster.local:9094,EXTERNAL://kafka-broker-0-external.kafka-ns.svc.cluster.local:9094"
-    extraConfig:
-      defaultReplicationFactor: 3
-      offsetsTopicReplicationFactor: 3
+      publishNotReadyAddresses: true
+      loadBalancerSourceRanges:  
+        - ${var.private_subnet_cidrs[0]}
+        - ${var.private_subnet_cidrs[1]}
+        - ${var.private_subnet_cidrs[2]}
+      loadBalancerAnnotations:
+        "service.beta.kubernetes.io/aws-load-balancer-scheme": "internal"
+        "service.beta.kubernetes.io/aws-load-balancer-subnets": "${join(",", data.aws_subnets.private_subnets.ids)}"
+      annotations:
+        "service.beta.kubernetes.io/aws-load-balancer-scheme": "internal"
+        "service.beta.kubernetes.io/aws-load-balancer-subnets": "${join(",", data.aws_subnets.private_subnets.ids)}"
+rbac:
+  create: true
+serviceAccount:
+  create: true
+  automountServiceAccountToken: true
+listeners:
+  client:
+    containerPort: 9092
+    protocol: PLAINTEXT
+    name: CLIENT
+    sslClientAuth: "required"
+  controller:
+    name: CONTROLLER
+    containerPort: 9093
+    protocol: PLAINTEXT
+    sslClientAuth: "required"
+  interbroker:
+    containerPort: 9094
+    protocol: PLAINTEXT
+    name: INTERNAL
+    sslClientAuth: "required"
+  external:
+    containerPort: 9095
+    protocol: PLAINTEXT
+    name: EXTERNAL
+  securityProtocolMap: CLIENT:PLAINTEXT,CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+  advertisedListeners: "CLIENT://kafka-broker-0-external.kafka-ns.svc.cluster.local:9094,INTERNAL://kafka-broker-0-external.kafka-ns.svc.cluster.local:9094,EXTERNAL://kafka-broker-0-external.kafka-ns.svc.cluster.local:9094"
+metrics:
+  jmx:
+    enabled: true
+extraConfig:
+  defaultReplicationFactor: 1
+  offsetsTopicReplicationFactor: 1
+  maxMessageBytes: 10485880
+  logFlushIntervalMessages: 1
     EOF
   ]
   depends_on = [null_resource.update_kubeconfig]
@@ -247,3 +251,33 @@ data "kubernetes_service" "kafka" {
 #     "retention.ms"   = var.topic_retention
 #   }
 # }
+
+
+
+resource "kubernetes_manifest" "kafka_virtualservice" {
+  manifest = {
+    apiVersion = "networking.istio.io/v1alpha3"
+    kind       = "VirtualService"
+    metadata = {
+      name      = "kafka-virtualservice"
+      namespace = kubernetes_namespace.kafka_ns.metadata[0].name
+    }
+    spec = {
+      hosts = ["kafka-broker-0-external.kafka-ns.svc.cluster.local"]
+      tcp = [{
+        match = [{
+          port = 9094
+        }]
+        route = [{
+          destination = {
+            host = "kafka-broker-0-external.kafka-ns.svc.cluster.local"
+            port = {
+              number = 9094 
+            }
+          }
+        }]
+      }]
+    }
+  }
+  depends_on = [helm_release.kafka]
+}

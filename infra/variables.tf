@@ -9,9 +9,7 @@ variable "region" {
 # variable "docker_config_content" {}
 
 variable "helm_repo_token" {}
-variable "username" {
-  
-}
-variable "password" {
-  
-}
+variable "username" {}
+variable "password" {}
+variable "pg_username" {}
+variable "pg_password" {}

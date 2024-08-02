@@ -1,4 +1,4 @@
-variable caRoleArn {}
+variable "caRoleArn" {}
 # variable "docker_config_content" {}
 variable "eks_endpoint" {}
 variable "eks_name" {}
@@ -18,33 +18,33 @@ variable "private_subnets" {}
 variable "public_subnets" {}
 
 variable "autoscaler_ns" {
-    default = "eks-ca"
+  default = "eks-ca"
 }
 
 variable "autoscaler_name" {
-    default = "eks-autoscaler"
+  default = "eks-autoscaler"
 }
 
 variable "autoscaler_repo" {
-    default = "https://raw.githubusercontent.com/cyse7125-su24-team11/ca-helm-registry/main"
+  default = "https://raw.githubusercontent.com/cyse7125-su24-team11/ca-helm-registry/main"
 }
 
 variable "autoscaler_chart" {
-    default = "autoscaler"
+  default = "autoscaler"
 }
 
 variable "autoscaler_version" {
-    default = "0.1.0"
+  default = "0.1.0"
 }
 
 variable "helm_repo_username" {
-    default = "maheshpoojaryneu"
+  default = "maheshpoojaryneu"
 }
 
 variable "username" {
-  
+
 }
 
 variable "password" {
-  
+
 }

@@ -150,7 +150,8 @@ resource "aws_eks_pod_identity_association" "pod_identity_association" {
     aws_eks_addon.core_dns,
     aws_eks_addon.ebs_csi,
     aws_eks_addon.kube-proxy,
-  aws_eks_addon.pod_identity]
+    aws_eks_addon.pod_identity
+  ]
 }
 
 # resource "null_resource" "ebs_csi_recreate" {

@@ -3,7 +3,7 @@ resource "random_id" "postgres" {
 }
 
 data "aws_eks_cluster_auth" "cluster_auth" {
-  name = var.eks_name
+  name       = var.eks_name
   depends_on = [var.eks_name]
 }
 
@@ -47,7 +47,7 @@ resource "null_resource" "kubeconfig" {
 resource "kubernetes_namespace" "cve_consumer_app_ns" {
   metadata {
     name = "consumer"
-     labels = {
+    labels = {
       "istio-injection" = "enabled"
     }
   }
