@@ -2,7 +2,7 @@ terraform {
   required_version = "~>1.8.3"
   backend "s3" {
     bucket = "terraform-csye7125"
-    key    = "eks-2.tfstate"
+    key    = "eks.tfstate"
     region = "us-east-1"
   }
   # cloud {
