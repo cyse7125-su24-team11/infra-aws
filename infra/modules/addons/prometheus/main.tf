@@ -1,11 +1,46 @@
 
+data "aws_eks_cluster_auth" "cluster_auth" {
+  name = var.eks_name
+}
+
+data "aws_eks_cluster" "eks_cluster" {
+  name = var.eks_name
+}
+
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.eks_cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority.0.data)
+  token                  = data.aws_eks_cluster_auth.cluster_auth.token
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    args        = ["eks", "get-token", "--cluster-name", var.eks_name, "--role-arn", data.aws_eks_cluster.eks_cluster.role_arn]
+    command     = "aws"
+  }
+}
+
+
+provider "helm" {
+  kubernetes {
+    host                   = data.aws_eks_cluster.eks_cluster.endpoint
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority.0.data)
+    token                  = data.aws_eks_cluster_auth.cluster_auth.token
+  }
+}
+resource "null_resource" "update_kubeconfig" {
+  provisioner "local-exec" {
+    command = "aws eks --region ${var.region} update-kubeconfig --name ${data.aws_eks_cluster.eks_cluster.name}"
+  }
+  depends_on = [data.aws_eks_cluster.eks_cluster]
+}
+
 
 resource "kubernetes_namespace" "monitoring" {
   metadata {
     name = var.namespace
-    # labels = {
-    #   "istio-injection" = "enabled"
-    # }
+    labels = {
+      "istio-injection" = "enabled"
+    }
   }
 }
 
@@ -35,6 +70,9 @@ resource "helm_release" "prometheus" {
   values = [
     <<EOF
     fullnameOverride: prometheus
+    podDisruptionBudget:
+      enabled: true
+      maxUnavailable: 2
     alertmanager:
       enabled: true
     pushgateway:
@@ -75,6 +113,10 @@ resource "helm_release" "prometheus_operator" {
 
   values = [
     <<EOF
+    alertmanager:
+      podDisruptionBudget:
+        enabled: true
+        minAvailable: 1
     prometheus-node-exporter:
       service:
         port: ${var.prometheus_operator_node_exporter_port}
@@ -83,6 +125,9 @@ resource "helm_release" "prometheus_operator" {
           operator: "Exists"
           effect: "NoSchedule"
       prometheus:
+        podDisruptionBudget:
+          enabled: true
+          minAvailable: 1
         monitor:
           enabled: true
       resources:
@@ -122,6 +167,9 @@ resource "helm_release" "postgres_exporter" {
 
   values = [
     <<EOF
+    podDisruptionBudget:
+      enabled: false
+      maxUnavailable: 1
     postgres:
       datasource:
         host: "postgres.consumer"
@@ -138,8 +186,14 @@ resource "helm_release" "kube_state_metrics" {
   namespace  = kubernetes_namespace.monitoring.metadata[0].name
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-state-metrics"
-
-  values = []
+  values = [
+    <<EOF
+podAnnotations:
+  sidecar.istio.io/inject: "false"
+podDisruptionBudget
+  maxUnavailable: 1
+    EOF
+  ]
 }
 
 resource "helm_release" "node_exporter" {
@@ -184,6 +238,8 @@ resource "helm_release" "grafana" {
 
   values = [
     <<EOF
+    podDisruptionBudget:
+      maxUnavailable: 1
     adminUser: "admin"
     adminPassword: "admin"
     datasources:
@@ -210,7 +266,7 @@ resource "helm_release" "grafana" {
     dashboards:
       default:
         kafka:
-          gnetId: 7589
+          gnetId: 10122
           revision: 1
           datasource: Prometheus
         postgres:
@@ -239,8 +295,13 @@ resource "kubernetes_manifest" "prometheus_virtualservice" {
     }
     spec = {
       hosts = ["prometheus-server.${var.namespace}.svc.cluster.local"]
-      http = [
+      tcp = [
         {
+          match = [
+            {
+              port = "${var.prometheus_port}"
+            }
+          ]
           route = [
             {
               destination = {
@@ -295,8 +356,13 @@ resource "kubernetes_manifest" "grafana_virtualservice" {
     }
     spec = {
       hosts = ["grafana.${var.namespace}.svc.cluster.local"]
-      http = [
+      tcp = [
         {
+          match = [
+            {
+              port = "${var.grafana_port}"
+            }
+          ]
           route = [
             {
               destination = {
@@ -337,6 +403,30 @@ resource "kubernetes_manifest" "grafana_serviceentry" {
           address = "grafana.${var.namespace}.svc.cluster.local"
         }
       ]
+    }
+  }
+}
+
+resource "kubernetes_manifest" "istio-gateway" {
+  manifest = {
+    apiVersion = "networking.istio.io/v1alpha3"
+    kind       = "Gateway"
+    metadata = {
+      name = "istio-gateway"
+      namespace = "istio-system"
+    }
+    spec = {
+      selector = {
+        istio = "ingressgateway"
+      }
+      servers = [{
+        port = {
+          number   = 80
+          name     = "http"
+          protocol = "HTTP"
+        }
+        hosts = ["*"]
+      }]
     }
   }
 }

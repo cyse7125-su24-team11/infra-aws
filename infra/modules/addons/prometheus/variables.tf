@@ -1,3 +1,11 @@
+variable "eks_name" {
+  default = "cve-eks"
+}
+
+variable "region" {
+  default = "us-east-1"
+}
+
 variable "pg_username" {}
 variable "pg_password" {}
 

@@ -99,8 +99,8 @@ broker:
   replicaCount: 1
   resources:
     requests:
-      cpu: "200m"
-      memory: "512Mi"
+      cpu: "500m"
+      memory: "256Mi"
     limits:
       cpu: "500m"
       memory: "1024Mi"
@@ -109,8 +109,7 @@ broker:
       enabled: true
       minReplicas: 1
       maxReplicas: 4
-      targetCPU: 50
-      targetMemory: 70
+      targetCPU: 90
 controller:
   automountServiceAccountToken: true
   replicaCount: 1
@@ -127,15 +126,21 @@ kraft:
   processRoles: broker,controller
 zookeeper:
   enabled: false
-  metrics:
-    enabled: true
+metrics:
+  jmx:
+    enabled:true
+pdb:
+  create: true
+  minAvailable: 1
 provisioning:
   enabled: true
-  automountServiceAccountToken: true
+  automountServiceAccountToken: false
   topics:
   - name: push_cve_records
     replicationFactor: 1
     numPartitions: 6
+  podAnnotations:
+    sidecar.istio.io/inject: "false"
 externalAccess:
   enabled: true
   autoDiscovery:
@@ -143,7 +148,7 @@ externalAccess:
   broker:
     ports:
       external: 9094
-    automountServiceAccountToken: true
+    automountServiceAccountToken: false
     readinessProbe:
       initialDelaySeconds: 30
     service:
@@ -168,7 +173,7 @@ externalAccess:
     service:
       type: LoadBalancer
       allocateLoadBalancerNodePorts: true
-      automountServiceAccountToken: true
+      automountServiceAccountToken: false
       publishNotReadyAddresses: true
       loadBalancerSourceRanges:  
         - ${var.private_subnet_cidrs[0]}
@@ -184,7 +189,7 @@ rbac:
   create: true
 serviceAccount:
   create: true
-  automountServiceAccountToken: true
+  automountServiceAccountToken: false
 listeners:
   client:
     containerPort: 9092
@@ -279,5 +284,4 @@ resource "kubernetes_manifest" "kafka_virtualservice" {
       }]
     }
   }
-  depends_on = [helm_release.kafka]
 }
