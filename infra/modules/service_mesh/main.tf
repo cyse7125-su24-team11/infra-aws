@@ -1,3 +1,4 @@
+
 data "aws_eks_cluster_auth" "cluster_auth" {
   name = var.eks_name
 }
@@ -5,6 +6,35 @@ data "aws_eks_cluster_auth" "cluster_auth" {
 data "aws_eks_cluster" "eks_cluster" {
   name = var.eks_name
 }
+
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.eks_cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority.0.data)
+  token                  = data.aws_eks_cluster_auth.cluster_auth.token
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    args        = ["eks", "get-token", "--cluster-name", var.eks_name, "--role-arn", data.aws_eks_cluster.eks_cluster.role_arn]
+    command     = "aws"
+  }
+}
+
+
+provider "helm" {
+  kubernetes {
+    host                   = data.aws_eks_cluster.eks_cluster.endpoint
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority.0.data)
+    token                  = data.aws_eks_cluster_auth.cluster_auth.token
+  }
+}
+resource "null_resource" "update_kubeconfig" {
+  provisioner "local-exec" {
+    command = "aws eks --region ${var.region} update-kubeconfig --name ${data.aws_eks_cluster.eks_cluster.name}"
+  }
+  depends_on = [data.aws_eks_cluster.eks_cluster]
+}
+
+
 
 data "aws_subnets" "private_subnets" {
   filter {
@@ -78,28 +108,4 @@ EOF
   depends_on = [ helm_release.istio-base, helm_release.istiod ]
 }
 
-resource "kubernetes_manifest" "istio-gateway" {
-  manifest = {
-    apiVersion = "networking.istio.io/v1alpha3"
-    kind       = "Gateway"
-    metadata = {
-      name = "istio-gateway"
-      namespace = "istio-system"
-    }
-    spec = {
-      selector = {
-        istio = "ingressgateway"
-      }
-      servers = [{
-        port = {
-          number   = 80
-          name     = "http"
-          protocol = "HTTP"
-        }
-        hosts = ["*"]
-      }]
-    }
-  }
-  depends_on = [ helm_release.istio-base, helm_release.istiod, helm_release.istio_ingress ]
 
-}

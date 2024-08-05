@@ -12,6 +12,7 @@ module "k8s" {
   eks_endpoint               = module.eks.cluster.endpoint
   eks_name                   = module.eks.cluster.name
   certificate_authority_data = base64decode(module.eks.cluster.certificate_authority.0.data)
+
 }
 
 module "network" {
@@ -57,6 +58,7 @@ module "node_group" {
   node_group_AmazonEKSWorkerNodeIAM                = module.iam.node_group_AmazonEKSWorkerNodePolicy
   node_group_AmazonEC2ContainerRegistryReadOnlyIAM = module.iam.node_group_AmazonEC2ContainerRegistryReadOnly
   eks_sg                                           = module.network.eks_sg
+  
 }
 
 # module "kafka" {
@@ -97,11 +99,20 @@ module "ca" {
   public_subnets             = module.network.public_subnets
   username                   = var.username
   password                   = var.password
+
 }
 
-module "istio" {
-  source = "./modules/service_mesh"
-}
+
+# module "istio" {
+#   source = "./modules/service_mesh"
+#   eks_endpoint               = module.eks.cluster.endpoint
+#   certificate_authority_data = base64decode(module.eks.cluster.certificate_authority.0.data)
+#   eks_cluster_role           = module.iam.eks_cluster_role
+#   eks_cluster_name           = module.eks.cluster.name
+#   region                     = var.region
+
+
+# }
 
 module "cloudwatch-observability" {
   source                     = "./modules/addons/cloudwatch"
@@ -120,10 +131,20 @@ module "fluentbit" {
   aws_region          = var.region
   cloudwatch_role_arn = module.iam.cloudwatch_role_arn
   cloudwatch-ns = module.cloudwatch-observability.cloudwatch-ns
+
 }
 
-module "prometheus" {
-  source      = "./modules/addons/prometheus"
-  pg_password = var.pg_password
-  pg_username = var.pg_password
+# module "prometheus" {
+#   source      = "./modules/addons/prometheus"
+#   pg_password = var.pg_password
+#   pg_username = var.pg_password
+#   depends_on = [ module.eks,module.istio ]
+# }
+
+module "metrics-server" {
+
+  source = "./modules/addons/metrics-server"
+  username = var.username
+  password = var.password
+  helm_repo_token = var.helm_repo_token
 }
