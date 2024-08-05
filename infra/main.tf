@@ -147,4 +147,6 @@ module "metrics-server" {
   username = var.username
   password = var.password
   helm_repo_token = var.helm_repo_token
+
+  depends_on = [ module.eks ]
 }

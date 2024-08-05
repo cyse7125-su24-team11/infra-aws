@@ -117,6 +117,11 @@ resource "helm_release" "prometheus_operator" {
       podDisruptionBudget:
         enabled: true
         minAvailable: 1
+    prometheusOperator:
+      admissionWebhooks:
+        patch:
+          podAnnotations:
+            sidecar.istio.io/inject: "false"
     prometheus-node-exporter:
       service:
         port: ${var.prometheus_operator_node_exporter_port}
@@ -190,7 +195,7 @@ resource "helm_release" "kube_state_metrics" {
     <<EOF
 podAnnotations:
   sidecar.istio.io/inject: "false"
-podDisruptionBudget
+podDisruptionBudget:
   maxUnavailable: 1
     EOF
   ]
