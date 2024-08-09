@@ -224,6 +224,29 @@ resource "aws_iam_policy" "ebs_csi_kms_policy" {
   })
 }
 
+resource "aws_iam_policy" "external_dns_node_group_policy" {
+  name = "external_dns_node_group_policy"
+
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "route53:ListHostedZones",
+          "route53:ChangeResourceRecordSets",
+          "route53:ListResourceRecordSets",
+          "route53:ListHostedZonesByName",
+          "route53:GetHostedZone",
+          "route53:GetChange"
+        ],
+        "Resource" : "*"
+      }
+    ]
+  })
+}
+
+
 resource "aws_iam_policy" "ebs_csi_custom_policy" {
   name = var.ebs_csi_custom_policy
 
@@ -515,6 +538,13 @@ resource "aws_iam_role_policy_attachment" "node_group_kms_policy" {
   role       = aws_iam_role.node_group_role.name
   depends_on = [aws_iam_role.node_group_role]
 }
+
+resource "aws_iam_role_policy_attachment" "node_group_external_dns_policy" {
+  policy_arn = aws_iam_policy.external_dns_node_group_policy.arn
+  role       = aws_iam_role.node_group_role.name
+  depends_on = [aws_iam_role.node_group_role]
+}
+
 
 resource "aws_iam_policy" "pass_role_policy" {
   name = "pass_role_policy"

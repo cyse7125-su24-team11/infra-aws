@@ -9,3 +9,4 @@ variable "eks_endpoint" {}
 variable "eks_name" {}
 variable "certificate_authority_data" {}
 variable "region" {}
+variable "eks_cluster" {}

@@ -99,16 +99,16 @@ broker:
   replicaCount: 1
   resources:
     requests:
-      cpu: "500m"
+      cpu: "200m"
       memory: "256Mi"
     limits:
       cpu: "500m"
-      memory: "1024Mi"
+      memory: "512Mi"
   autoscaling:
     hpa:
       enabled: true
       minReplicas: 1
-      maxReplicas: 4
+      maxReplicas: 3
       targetCPU: 90
 controller:
   automountServiceAccountToken: true
@@ -277,7 +277,7 @@ resource "kubernetes_manifest" "kafka_virtualservice" {
           destination = {
             host = "kafka-broker-0-external.kafka-ns.svc.cluster.local"
             port = {
-              number = 9094 
+              number = 9094
             }
           }
         }]

@@ -48,15 +48,15 @@ variable "desired_size" {
 
 variable "max_size" {
   type    = number
-  default = 6
+  default = 9
 }
 
 variable "min_size" {
   type    = number
-  default = 3
+  default = 6
 }
 
 variable "max_unavailable" {
   type    = number
-  default = 3
+  default = 1
 }

@@ -26,18 +26,16 @@ variable "grafana_port" {
   default = "3000"
 }
 
-variable "node_exporter_port" {
-  default = "9101"
+variable "route53_zone_id" {
+  default = "Z06075563MFYVGY2N9J1J"
 }
 
-variable "postgres_port" {
-  default = "5432"
+variable "domain" {
+  default = "grafana.dev.anibahscsye6225.me"
 }
 
-variable "kafka_broker_port" {
-  default = "9094"
-}
-
-variable "kafka_exporter_port" {
-  default = "9308"
+variable "aws_access_key_id" {}
+variable "aws_secret_access_key" {}
+variable "cert_name" {
+  default =  "grafana-tls"  
 }

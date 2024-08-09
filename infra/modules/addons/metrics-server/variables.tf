@@ -6,10 +6,10 @@ variable "region" {
   default = "us-east-1"
 }
 variable "username" {
-  
+
 }
 variable "password" {
-  
+
 }
 
 variable "metrics_server_name" {
@@ -21,7 +21,7 @@ variable "metrics_server_repo" {
 }
 
 variable "metrics_chart" {
-  default = "metrics-server" 
+  default = "metrics-server"
 }
 
 variable "chart_version" {
@@ -32,5 +32,10 @@ variable "helm_repo_username" {
 }
 
 variable "helm_repo_token" {
-  
+
 }
+
+variable "eks_cluster_name" {}
+variable "eks_endpoint" {}
+variable "certificate_authority_data" {}
+variable "eks_cluster_role" {}
