@@ -140,26 +140,22 @@ resource "helm_release" "grafana" {
     <<EOF
     service:
       type: LoadBalancer
-      port: 443
+      port: 80
       targetPort: 3000
       annotations:
-        service.beta.kubernetes.io/aws-load-balancer-internal: "false" 
-        service.beta.kubernetes.io/aws-load-balancer-subnets: "${join(",", data.aws_subnets.public_subnets.ids)}"
-        external-dns.alpha.kubernetes.io/hostname: "grafana.dev.anibahscsye6225.me."  
-        external-dns.alpha.kubernetes.io/ttl: "300"
-        ingress.kubernetes.io/force-ssl-redirect: "true"
         kubernetes.io/ingress.class: alb
         alb.ingress.kubernetes.io/scheme: internet-facing
+        external-dns.alpha.kubernetes.io/hostname: "grafana.dev.anibahscsye6225.me."  # Replace with your desired DNS hostname
+        external-dns.alpha.kubernetes.io/ttl: "300"
+        service.beta.kubernetes.io/aws-load-balancer-internal: "false" 
+        service.beta.kubernetes.io/aws-load-balancer-subnets: "${join(",", data.aws_subnets.public_subnets.ids)}"
         cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        ingress.kubernetes.io/force-ssl-redirect: "true"
     ingress:
       enabled: true
-      ingressClassName: nginx
       annotations:
-        alb.ingress.kubernetes.io/scheme: internet-facing
-        alb.ingress.kubernetes.io/healthcheck-path: /
-        alb.ingress.kubernetes.io/healthcheck-port: traffic-port
-        alb.ingress.kubernetes.io/ssl-redirect: 'true'
         cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        external-dns.alpha.kubernetes.io/hostname: "grafana.dev.anibahscsye6225.me."
       hosts:
         - "grafana.dev.anibahscsye6225.me"
       tls:
