@@ -3,6 +3,7 @@ data "aws_eks_cluster_auth" "cluster_auth" {
   name = var.eks_name
 }
 
+
 data "aws_eks_cluster" "eks_cluster" {
   name = var.eks_name
 }
@@ -109,7 +110,7 @@ resource "helm_release" "prometheus_operator" {
   namespace  = kubernetes_namespace.monitoring.metadata[0].name
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
-#   version    = "latest"
+  #   version    = "latest"
 
   values = [
     <<EOF
@@ -147,7 +148,7 @@ resource "helm_release" "prometheus_operator" {
 }
 
 variable "prometheus_operator_node_exporter_port" {
-  default = 9102  
+  default = 9102
 }
 
 
@@ -157,9 +158,16 @@ resource "helm_release" "kafka_exporter" {
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "prometheus-kafka-exporter"
   values = [
-<<EOF
+    <<EOF
     kafkaServer:
-        - "kafka-broker-0-external.kafka-ns:${var.kafka_broker_port}"
+        - "kafka-broker-0-external.kafka-ns.svc.cluster.local:${var.kafka_broker_port}"
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "100m"
+      limits:
+        memory: "128Mi"
+        cpu: "200m"
     EOF
   ]
 }
@@ -182,6 +190,13 @@ resource "helm_release" "postgres_exporter" {
         user: "${var.pg_username}"
         password: "${var.pg_password}"
         database: "cve"
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "100m"
+      limits:
+        memory: "128Mi"
+        cpu: "200m"
     EOF
   ]
 }
@@ -197,6 +212,13 @@ podAnnotations:
   sidecar.istio.io/inject: "false"
 podDisruptionBudget:
   maxUnavailable: 1
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "100m"
+  limits:
+    memory: "128Mi"
+    cpu: "200m"
     EOF
   ]
 }
@@ -231,61 +253,6 @@ resource "helm_release" "node_exporter" {
     prometheus:
       monitor:
         enabled: true
-    EOF
-  ]
-}
-
-resource "helm_release" "grafana" {
-  name       = "grafana"
-  namespace  = kubernetes_namespace.monitoring.metadata[0].name
-  repository = "https://grafana.github.io/helm-charts"
-  chart      = "grafana"
-
-  values = [
-    <<EOF
-    podDisruptionBudget:
-      maxUnavailable: 1
-    adminUser: "admin"
-    adminPassword: "admin"
-    datasources:
-      datasources.yaml:
-        apiVersion: 1
-        datasources:
-          - name: Prometheus
-            type: prometheus
-            url: "http://prometheus-server.${var.namespace}.svc.cluster.local:80"
-            access: proxy
-            isDefault: true
-    dashboardProviders:
-      dashboardproviders.yaml:
-        apiVersion: 1
-        providers:
-        - name: 'default'
-          orgId: 1
-          folder: ''
-          type: file
-          disableDeletion: false
-          editable: true
-          options:
-            path: /var/lib/grafana/dashboards/default
-    dashboards:
-      default:
-        kafka:
-          gnetId: 10122
-          revision: 1
-          datasource: Prometheus
-        postgres:
-          gnetId: 9628
-          revision: 1
-          datasource: Prometheus
-        node_exporter:
-          gnetId: 1860
-          revision: 37
-          datasource: Prometheus
-        kube_state_metrics:
-          gnetId: 13332
-          revision: 12
-          datasource: Prometheus
     EOF
   ]
 }
@@ -342,96 +309,11 @@ resource "kubernetes_manifest" "prometheus_serviceentry" {
       ]
       resolution = "DNS"
       location   = "MESH_INTERNAL"
-      endpoints  = [
+      endpoints = [
         {
           address = "prometheus.${var.namespace}.svc.cluster.local"
         }
       ]
-    }
-  }
-}
-
-resource "kubernetes_manifest" "grafana_virtualservice" {
-  manifest = {
-    apiVersion = "networking.istio.io/v1alpha3"
-    kind       = "VirtualService"
-    metadata = {
-      name      = "grafana-virtualservice"
-      namespace = kubernetes_namespace.monitoring.metadata[0].name
-    }
-    spec = {
-      hosts = ["grafana.${var.namespace}.svc.cluster.local"]
-      tcp = [
-        {
-          match = [
-            {
-              port = "${var.grafana_port}"
-            }
-          ]
-          route = [
-            {
-              destination = {
-                host = "grafana.${var.namespace}.svc.cluster.local"
-                port = {
-                  number = "${var.grafana_port}"
-                }
-              }
-            }
-          ]
-        }
-      ]
-    }
-  }
-}
-
-resource "kubernetes_manifest" "grafana_serviceentry" {
-  manifest = {
-    apiVersion = "networking.istio.io/v1alpha3"
-    kind       = "ServiceEntry"
-    metadata = {
-      name      = "grafana-serviceentry"
-      namespace = kubernetes_namespace.monitoring.metadata[0].name
-    }
-    spec = {
-      hosts = ["grafana.${var.namespace}.svc.cluster.local"]
-      ports = [
-        {
-          number   = "${var.grafana_port}"
-          name     = "http"
-          protocol = "HTTP"
-        }
-      ]
-      resolution = "DNS"
-      location   = "MESH_INTERNAL"
-      endpoints  = [
-        {
-          address = "grafana.${var.namespace}.svc.cluster.local"
-        }
-      ]
-    }
-  }
-}
-
-resource "kubernetes_manifest" "istio-gateway" {
-  manifest = {
-    apiVersion = "networking.istio.io/v1alpha3"
-    kind       = "Gateway"
-    metadata = {
-      name = "istio-gateway"
-      namespace = "istio-system"
-    }
-    spec = {
-      selector = {
-        istio = "ingressgateway"
-      }
-      servers = [{
-        port = {
-          number   = 80
-          name     = "http"
-          protocol = "HTTP"
-        }
-        hosts = ["*"]
-      }]
     }
   }
 }

@@ -6,7 +6,7 @@ echo "Deploying EksCluster "
 echo "#####################"
 
 terraform init
-terraform apply --auto-approve -var-file=values.tfvars || true
+terraform apply --auto-approve -var-file=values.tfvars
 
 
 echo "################"
@@ -33,4 +33,22 @@ echo "####################"
 terraform -chdir=./modules/addons/prometheus init
 terraform -chdir=./modules/addons/prometheus apply --auto-approve -var-file=values.tfvars
 
+
+
+echo "####################"
+echo "Applying Cert Manager "
+echo "####################"
+
+
+terraform -chdir=./modules/addons/certmanager init
+terraform -chdir=./modules/addons/certmanager apply --auto-approve
+
+
+echo "####################"
+echo "Applying Grafana "
+echo "####################"
+
+
+terraform -chdir=./modules/addons/grafana init
+terraform -chdir=./modules/addons/grafana apply --auto-approve -var-file=values.tfvars
 

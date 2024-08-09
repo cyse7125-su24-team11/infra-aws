@@ -64,6 +64,7 @@ resource "kubernetes_service_account" "cloudwatch-sa" {
       "eks.amazonaws.com/role-arn" = var.cloudwatch_role_arn
     }
   }
+  automount_service_account_token = false
   depends_on = [
     var.eks_cluster, var.cloudwatch_role_arn, null_resource.kubeconfig, kubernetes_namespace.cloudwatch-ns
   ]
@@ -71,12 +72,12 @@ resource "kubernetes_service_account" "cloudwatch-sa" {
 
 
 resource "aws_eks_addon" "cloudwatch-observability" {
-  cluster_name             = var.eks_cluster_name
-  addon_name               = "amazon-cloudwatch-observability"
-  addon_version            = "v1.8.0-eksbuild.1"
-  service_account_role_arn = var.cloudwatch_role_arn
-  resolve_conflicts_on_update        = "OVERWRITE"
-  resolve_conflicts_on_create        = "OVERWRITE"
+  cluster_name                = var.eks_cluster_name
+  addon_name                  = "amazon-cloudwatch-observability"
+  addon_version               = "v1.8.0-eksbuild.1"
+  service_account_role_arn    = var.cloudwatch_role_arn
+  resolve_conflicts_on_update = "OVERWRITE"
+  resolve_conflicts_on_create = "OVERWRITE"
   depends_on = [
     var.eks_cluster, null_resource.kubeconfig, kubernetes_namespace.cloudwatch-ns
   ]

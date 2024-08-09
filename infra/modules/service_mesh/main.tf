@@ -43,6 +43,13 @@ data "aws_subnets" "private_subnets" {
   }
 }
 
+data "aws_subnets" "public_subnets" {
+  filter {
+    name   = "tag:kubernetes.io/role/elb"
+    values = ["1"]
+  }
+}
+
 resource "kubernetes_namespace" "istio-ns" {
   metadata {
     name = "istio-system"
@@ -50,24 +57,24 @@ resource "kubernetes_namespace" "istio-ns" {
 }
 
 resource "helm_release" "istio-base" {
-    
-  name = "istio-service-mesh"
+
+  name       = "istio-service-mesh"
   repository = "https://istio-release.storage.googleapis.com/charts"
-  chart   = "base"
-  version = "1.22.3"
+  chart      = "base"
+  version    = "1.22.3"
   namespace  = "istio-system"
 
   # create_namespace = true
-  depends_on = [ kubernetes_namespace.istio-ns ]
+  depends_on = [kubernetes_namespace.istio-ns]
 }
 
 resource "helm_release" "istiod" {
   name       = "istiod"
   repository = "https://istio-release.storage.googleapis.com/charts"
   chart      = "istiod"
-  version    = "1.22.3"  # Update to the desired Istio version
+  version    = "1.22.3" # Update to the desired Istio version
   namespace  = "istio-system"
-  
+
   # values = [file("custom-profile.yaml")]
   values = [
     <<EOF
@@ -85,7 +92,7 @@ global:
 EOF
   ]
 
-  depends_on = [ helm_release.istio-base ]
+  depends_on = [helm_release.istio-base]
 
 }
 
@@ -97,7 +104,7 @@ resource "helm_release" "istio_ingress" {
   repository = "https://istio-release.storage.googleapis.com/charts"
   version    = "1.22.3"
   values = [
-  <<EOF
+    <<EOF
 annotations:
   service.beta.kubernetes.io/aws-load-balancer-name: "istio-internal-gateway"
   service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
@@ -105,7 +112,50 @@ annotations:
   service.beta.kubernetes.io/aws-load-balancer-subnets: "${join(",", data.aws_subnets.private_subnets.ids)}"
 EOF 
   ]
-  depends_on = [ helm_release.istio-base, helm_release.istiod ]
+  depends_on = [helm_release.istio-base, helm_release.istiod]
 }
+
+
+# data "aws_eip" "eip_grafana" {
+#   filter {
+#     name   = var.eip_tag
+#     values = [var.grafana_eip]
+#   }
+# }
+
+
+resource "kubernetes_service" "istio_ingress_public" {
+  metadata {
+    name      = "istio-ingressgateway-public"
+    namespace = "istio-system"
+    annotations = {
+      "service.beta.kubernetes.io/aws-load-balancer-internal" = "false"
+      "service.beta.kubernetes.io/aws-load-balancer-subnets"  = "${join(",", data.aws_subnets.public_subnets.ids)}"
+    }
+  }
+  # "service.beta.kubernetes.io/aws-load-balancer-eip-allocations" = data.aws_eip.eip_grafana.id
+
+  spec {
+    type = "LoadBalancer"
+    selector = {
+      app = "istio-ingressgateway"
+    }
+
+    port {
+      name        = "http"
+      port        = 80
+      target_port = 3000
+      protocol    = "TCP"
+    }
+
+    port {
+      name        = "https"
+      port        = 443
+      target_port = 3000
+      protocol    = "TCP"
+    }
+  }
+}
+
 
 

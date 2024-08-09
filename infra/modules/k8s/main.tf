@@ -1,5 +1,7 @@
 data "aws_eks_cluster_auth" "cluster_auth" {
-  name = var.eks_name
+  name       = var.eks_name
+  depends_on = [var.eks_cluster]
+
 }
 
 provider "kubernetes" {
@@ -54,7 +56,7 @@ resource "kubernetes_config_map_v1_data" "aws_auth_configmap" {
         - system:masters
     YAML
   }
-  depends_on = [var.node_group, null_resource.kubeconfig]
+  depends_on = [var.node_group, null_resource.kubeconfig, var.eks_name]
 }
 
 resource "kubernetes_namespace" "cve_processor_job_ns" {
@@ -78,36 +80,6 @@ resource "kubernetes_namespace" "cve_operator" {
   depends_on = [null_resource.kubeconfig]
 }
 
-
-##########################################
-##########   Cert Manager   ##############
-##########################################
-
-
-resource "kubernetes_namespace" "cert_manager" {
-  metadata {
-    name = "cert-manager"
-    labels = {
-      "istio-injection" = "enabled"
-    }
-  }
-}
-
-
-resource "helm_release" "cert_manager" {
-  name       = "cert-manager"
-  repository = "https://charts.jetstack.io"
-  chart      = "cert-manager"
-  namespace  = kubernetes_namespace.cert_manager.metadata[0].name
-  version    = "v1.15.1"
-
-  set {
-    name  = "crds.enabled"
-    value = "true"
-  }
-
-  depends_on = [kubernetes_namespace.cert_manager]
-}
 
 # data "http" "cwagent_crds" {
 #   url = "https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/main/k8s-quickstart/cwagent-custom-resource-definitions.yaml"

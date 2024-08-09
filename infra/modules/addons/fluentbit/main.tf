@@ -1,3 +1,18 @@
+data "aws_eks_cluster_auth" "cluster_auth" {
+  name = var.eks_cluster_name
+}
+
+provider "kubernetes" {
+  host                   = var.eks_endpoint
+  cluster_ca_certificate = var.certificate_authority_data
+  token                  = data.aws_eks_cluster_auth.cluster_auth.token
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    args        = ["eks", "get-token", "--cluster-name", var.eks_cluster_name, "--role-arn", var.eks_cluster_role]
+    command     = "aws"
+  }
+}
+
 resource "kubernetes_service_account" "fluentbit" {
   metadata {
     name      = "fluent-bit"
@@ -6,6 +21,7 @@ resource "kubernetes_service_account" "fluentbit" {
       "eks.amazonaws.com/role-arn" = var.cloudwatch_role_arn
     }
   }
+  automount_service_account_token = true
 }
 
 resource "kubernetes_cluster_role" "fluentbit" {
@@ -18,6 +34,7 @@ resource "kubernetes_cluster_role" "fluentbit" {
     resources  = ["namespaces", "pods"]
     verbs      = ["get", "list", "watch"]
   }
+  depends_on = [ kubernetes_service_account.fluentbit ]
 }
 
 resource "kubernetes_cluster_role_binding" "fluentbit" {
@@ -36,15 +53,13 @@ resource "kubernetes_cluster_role_binding" "fluentbit" {
     name      = kubernetes_service_account.fluentbit.metadata[0].name
     namespace = kubernetes_service_account.fluentbit.metadata[0].namespace
   }
+  depends_on = [ kubernetes_cluster_role.fluentbit ]
 }
 
 resource "kubernetes_config_map" "fluentbit" {
   metadata {
     name      = "fluent-bit-config"
     namespace = "amazon-cloudwatch"
-  }
-  lifecycle {
-    create_before_destroy = true
   }
   data = {
     "fluent-bit.conf" = <<EOF
@@ -82,6 +97,7 @@ EOF
     Decode_Field_As   escaped_utf8    log
 EOF
   }
+  depends_on = [ kubernetes_cluster_role_binding.fluentbit ]
 }
 
 resource "kubernetes_daemonset" "fluentbit" {
@@ -161,7 +177,7 @@ resource "kubernetes_daemonset" "fluentbit" {
       }
     }
   }
-  depends_on = [ var.cloudwatch-ns ]
+  depends_on = [var.cloudwatch-ns, kubernetes_config_map.fluentbit, kubernetes_service_account.fluentbit]
 }
 
 
