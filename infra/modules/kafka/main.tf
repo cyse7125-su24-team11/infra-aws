@@ -95,6 +95,9 @@ resource "helm_release" "kafka" {
   values = [
     <<EOF
 broker:
+  persistence:
+  enabled: true
+  storageClass: encrypted-ebs  
   automountServiceAccountToken: true
   replicaCount: 1
   resources:
@@ -111,6 +114,9 @@ broker:
       maxReplicas: 3
       targetCPU: 90
 controller:
+  persistence:
+    enabled: true
+    storageClass: encrypted-ebs
   automountServiceAccountToken: true
   replicaCount: 1
   controllerOnly: true

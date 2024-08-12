@@ -38,7 +38,7 @@ variable "force_update_version" {
 
 variable "instance_types" {
   type    = list(string)
-  default = ["c3.large"]
+  default = ["c3.xlarge"]
 }
 
 variable "desired_size" {
