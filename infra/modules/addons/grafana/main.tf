@@ -68,6 +68,25 @@ EOF
   ]
 }
 
+
+
+resource "helm_release" "nginx-controller" {
+  name       = "nginx-controller"
+  chart      = "nginx-ingress-controller"
+  repository = "https://charts.bitnami.com/bitnami"
+  version    = "11.3.20"
+  create_namespace = true
+  values = [
+    <<EOF
+service:
+  type: LoadBalancer  
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-internal: "false" 
+    service.beta.kubernetes.io/aws-load-balancer-subnets: "${join(",", data.aws_subnets.public_subnets.ids)}"
+EOF
+  ]
+}
+
 # resource "kubernetes_manifest" "externaldns_sa" {
 #   manifest = yamldecode(file("serviceaccount.yaml"))
 # }
@@ -107,27 +126,27 @@ resource "kubernetes_manifest" "cluster_issuer" {
   }
 }
 
-# resource "kubernetes_manifest" "grafana_certificate" {
-#   manifest = {
-#     apiVersion = "cert-manager.io/v1"
-#     kind       = "Certificate"
-#     metadata = {
-#       name      = "grafana-tls"
-#       namespace = "istio-system"
-#     }
-#     spec = {
-#       secretName = var.cert_name
-#       issuerRef = {
-#         kind = "ClusterIssuer"
-#         name = "letsencrypt-prod"
-#       }
-#       commonName = "grafana.dev.anibahscsye6225.me"
-#       dnsNames = [
-#         "grafana.dev.anibahscsye6225.me"
-#       ]
-#     }
-#   }
-# }
+resource "kubernetes_manifest" "grafana_certificate" {
+  manifest = {
+    apiVersion = "cert-manager.io/v1"
+    kind       = "Certificate"
+    metadata = {
+      name      = "grafana-tls"
+      namespace = "monitoring"
+    }
+    spec = {
+      secretName = var.cert_name
+      issuerRef = {
+        kind = "ClusterIssuer"
+        name = "letsencrypt-prod"
+      }
+      commonName = "grafana.dev.anibahscsye6225.me"
+      dnsNames = [
+        "grafana.dev.anibahscsye6225.me"
+      ]
+    }
+  }
+}
 #         external-dns.alpha.kubernetes.io/hostname: "grafana.dev.anibahscsye6225.me."
 
 resource "helm_release" "grafana" {
@@ -139,22 +158,16 @@ resource "helm_release" "grafana" {
   values = [
     <<EOF
     service:
-      type: LoadBalancer
+      type: NodePort
       port: 80
       targetPort: 3000
-      annotations:
-        kubernetes.io/ingress.class: alb
-        alb.ingress.kubernetes.io/scheme: internet-facing
-        external-dns.alpha.kubernetes.io/hostname: "grafana.dev.anibahscsye6225.me."  # Replace with your desired DNS hostname
-        external-dns.alpha.kubernetes.io/ttl: "300"
-        service.beta.kubernetes.io/aws-load-balancer-internal: "false" 
-        service.beta.kubernetes.io/aws-load-balancer-subnets: "${join(",", data.aws_subnets.public_subnets.ids)}"
-        cert-manager.io/cluster-issuer: "letsencrypt-prod"
-        ingress.kubernetes.io/force-ssl-redirect: "true"
     ingress:
       enabled: true
       annotations:
+        kubernetes.io/ingress.class: nginx
+        ingress.kubernetes.io/force-ssl-redirect: "true"
         cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        external-dns.alpha.kubernetes.io/ttl: "300"
         external-dns.alpha.kubernetes.io/hostname: "grafana.dev.anibahscsye6225.me."
       hosts:
         - "grafana.dev.anibahscsye6225.me"
@@ -163,7 +176,7 @@ resource "helm_release" "grafana" {
           hosts:
             - "grafana.dev.anibahscsye6225.me"
     podAnnotations:
-      sidecar.istio.io/inject: "true"
+      sidecar.istio.io/inject: "false"
     podDisruptionBudget:
       maxUnavailable: 1
     adminUser: "admin"
@@ -221,145 +234,145 @@ resource "helm_release" "grafana" {
 }
 
 
-resource "kubernetes_manifest" "istio-gateway" {
-  manifest = {
-    apiVersion = "networking.istio.io/v1alpha3"
-    kind       = "Gateway"
-    metadata = {
-      name      = "istio-ingressgateway-public"
-      namespace = "istio-system"
-      # annotations = {
-      #   "external-dns.alpha.kubernetes.io/hostname" = "grafana.dev.anibahscsye6225.me."
-      #   "external-dns.alpha.kubernetes.io/ttl"      = "300"
-      # }
-    }
-    spec = {
-      selector = {
-        istio = "ingressgateway"
-      }
-      servers = [{
-        port = {
-          number   = "${var.grafana_port}"
-          name     = "http"
-          protocol = "HTTP"
-        }
-        hosts = [var.domain]
-        # },
-        # {
-        #   port = {
-        #     number   = 443
-        #     name     = "https"
-        #     protocol = "HTTPS"
-        #   }
-        #   hosts = [var.domain]
-        #   tls = {
-        #     mode           = "SIMPLE"
-        #     credentialName = var.cert_name
-        #   }
-        }
-      ]
-    }
-  }
-}
+# resource "kubernetes_manifest" "istio-gateway" {
+#   manifest = {
+#     apiVersion = "networking.istio.io/v1alpha3"
+#     kind       = "Gateway"
+#     metadata = {
+#       name      = "istio-ingressgateway-public"
+#       namespace = "istio-system"
+#       # annotations = {
+#       #   "external-dns.alpha.kubernetes.io/hostname" = "grafana.dev.anibahscsye6225.me."
+#       #   "external-dns.alpha.kubernetes.io/ttl"      = "300"
+#       # }
+#     }
+#     spec = {
+#       selector = {
+#         istio = "ingressgateway"
+#       }
+#       servers = [{
+#         port = {
+#           number   = "${var.grafana_port}"
+#           name     = "http"
+#           protocol = "HTTP"
+#         }
+#         hosts = [var.domain]
+#         # },
+#         # {
+#         #   port = {
+#         #     number   = 443
+#         #     name     = "https"
+#         #     protocol = "HTTPS"
+#         #   }
+#         #   hosts = [var.domain]
+#         #   tls = {
+#         #     mode           = "SIMPLE"
+#         #     credentialName = var.cert_name
+#         #   }
+#         }
+#       ]
+#     }
+#   }
+# }
 
-resource "kubernetes_manifest" "grafana_virtualservice" {
-  manifest = {
-    apiVersion = "networking.istio.io/v1alpha3"
-    kind       = "VirtualService"
-    metadata = {
-      name      = "grafana-virtualservice"
-      namespace = var.namespace
-    }
-    spec = {
-      hosts = [var.domain]
-      # "grafana.${var.namespace}.svc.cluster.local", 
-      gateways = ["istio-ingressgateway-public"]
-      # tls = [
-      #   {
-      #     match = [
-      #       {
-      #         port     = 443
-      #         sniHosts = [var.domain]
-      #       }
-      #     ]
-      #     route = [
-      #       {
-      #         destination = {
-      #           host = "grafana.${var.namespace}.svc.cluster.local"
-      #           port = {
-      #             number = "${var.grafana_port}"
-      #           }
-      #         }
-      #       }
-      #     ]
-      #   }
-      # ]
-      tcp = [
-        {
-          match = [
-            {
-              port = "${var.grafana_port}"
-            }
-          ]
-          route = [
-            {
-              destination = {
-                host = "grafana.${var.namespace}.svc.cluster.local"
-                port = {
-                  number = "${var.grafana_port}"
-                }
-              }
-            }
-          ]
-        }
-      ]
-      http = [
-        {
-          route = [
-            {
-              destination = {
-                host = "grafana.${var.namespace}.svc.cluster.local"
-                port = {
-                  number = "${var.grafana_port}"
-                }
-              }
-            }
-          ]
-        }
-      ]
-    }
-  }
-  depends_on = [helm_release.grafana]
-}
+# resource "kubernetes_manifest" "grafana_virtualservice" {
+#   manifest = {
+#     apiVersion = "networking.istio.io/v1alpha3"
+#     kind       = "VirtualService"
+#     metadata = {
+#       name      = "grafana-virtualservice"
+#       namespace = var.namespace
+#     }
+#     spec = {
+#       hosts = [var.domain]
+#       # "grafana.${var.namespace}.svc.cluster.local", 
+#       gateways = ["istio-ingressgateway-public"]
+#       # tls = [
+#       #   {
+#       #     match = [
+#       #       {
+#       #         port     = 443
+#       #         sniHosts = [var.domain]
+#       #       }
+#       #     ]
+#       #     route = [
+#       #       {
+#       #         destination = {
+#       #           host = "grafana.${var.namespace}.svc.cluster.local"
+#       #           port = {
+#       #             number = "${var.grafana_port}"
+#       #           }
+#       #         }
+#       #       }
+#       #     ]
+#       #   }
+#       # ]
+#       tcp = [
+#         {
+#           match = [
+#             {
+#               port = "${var.grafana_port}"
+#             }
+#           ]
+#           route = [
+#             {
+#               destination = {
+#                 host = "grafana.${var.namespace}.svc.cluster.local"
+#                 port = {
+#                   number = "${var.grafana_port}"
+#                 }
+#               }
+#             }
+#           ]
+#         }
+#       ]
+#       http = [
+#         {
+#           route = [
+#             {
+#               destination = {
+#                 host = "grafana.${var.namespace}.svc.cluster.local"
+#                 port = {
+#                   number = "${var.grafana_port}"
+#                 }
+#               }
+#             }
+#           ]
+#         }
+#       ]
+#     }
+#   }
+#   depends_on = [helm_release.grafana]
+# }
 
 
-resource "kubernetes_manifest" "grafana_serviceentry" {
-  manifest = {
-    apiVersion = "networking.istio.io/v1alpha3"
-    kind       = "ServiceEntry"
-    metadata = {
-      name      = "grafana-serviceentry"
-      namespace = var.namespace
-    }
-    spec = {
-      hosts = [var.domain]
-      # hosts = ["grafana.${var.namespace}.svc.cluster.local"]
-      ports = [
-        {
-          number   = "${var.grafana_port}"
-          name     = "http"
-          protocol = "HTTP"
-        }
-      ]
-      resolution = "DNS"
-      location   = "MESH_EXTERNAL"
-      endpoints = [
-        {
-          address = "grafana.${var.namespace}.svc.cluster.local"
-        }
-      ]
-    }
-  }
-  depends_on = [kubernetes_manifest.grafana_virtualservice]
-}
+# resource "kubernetes_manifest" "grafana_serviceentry" {
+#   manifest = {
+#     apiVersion = "networking.istio.io/v1alpha3"
+#     kind       = "ServiceEntry"
+#     metadata = {
+#       name      = "grafana-serviceentry"
+#       namespace = var.namespace
+#     }
+#     spec = {
+#       hosts = [var.domain]
+#       # hosts = ["grafana.${var.namespace}.svc.cluster.local"]
+#       ports = [
+#         {
+#           number   = "${var.grafana_port}"
+#           name     = "http"
+#           protocol = "HTTP"
+#         }
+#       ]
+#       resolution = "DNS"
+#       location   = "MESH_EXTERNAL"
+#       endpoints = [
+#         {
+#           address = "grafana.${var.namespace}.svc.cluster.local"
+#         }
+#       ]
+#     }
+#   }
+#   depends_on = [kubernetes_manifest.grafana_virtualservice]
+# }
 
